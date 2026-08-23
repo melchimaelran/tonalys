@@ -1,0 +1,11 @@
+/project
+.claude
+CLAUDE.md
+
+node_modules/
+.env
+.env.local
+dist/
+.next/
+.turbo/
+*.log
