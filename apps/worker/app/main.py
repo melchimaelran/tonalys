@@ -1,6 +1,8 @@
-def main() -> None:
-    pass
+from fastapi import FastAPI
+
+app = FastAPI(title="Tonalys worker")
 
 
-if __name__ == "__main__":
-    main()
+@app.get("/")
+def root() -> dict[str, str]:
+    return {"service": "tonalys-worker"}
