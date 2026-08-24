@@ -24,6 +24,11 @@ FROM base AS builder
 WORKDIR /repo
 COPY --from=deps /repo/node_modules ./node_modules
 COPY --from=pruner /repo/out/full/ .
+ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
+# generate only needs DATABASE_URL to be present/parseable, never connects — real
+# value comes from docker-compose's environment: block at container runtime
+RUN pnpm --filter nest exec prisma generate
+# generates apps/nest/generated/prisma — src imports from it, build fails without this
 RUN pnpm exec turbo run build --filter=nest
 # produces apps/nest/dist (plain compiled JS)
 
@@ -35,5 +40,9 @@ RUN pnpm install --prod --frozen-lockfile
 # reinstalls from the pruned manifests, production deps only — smaller
 # and cleaner than reusing builder's node_modules (which has devDeps)
 COPY --from=builder /repo/apps/nest/dist ./apps/nest/dist
+COPY --from=pruner /repo/out/full/apps/nest/prisma ./apps/nest/prisma
+COPY --from=pruner /repo/out/full/apps/nest/prisma.config.ts ./apps/nest/prisma.config.ts
+# schema + migrations + config, needed to run "prisma migrate deploy"
+# inside this container (docker compose exec) — no host Node/prisma needed
 EXPOSE 3001
 CMD ["node", "apps/nest/dist/main.js"]
