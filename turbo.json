@@ -6,6 +6,8 @@
     },
     "lint": {},
     "typecheck": {},
-    "test": {}
+    "test": {},
+    "test:e2e": {},
+    "verify": {}
   }
 }
