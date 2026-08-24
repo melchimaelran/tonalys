@@ -12,3 +12,5 @@ dist/
 .next/
 .turbo/
 *.log
+
+.vscode
