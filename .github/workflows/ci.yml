@@ -21,3 +21,5 @@ jobs:
       - run: pnpm --filter nest exec prisma generate
       - run: pnpm exec turbo run lint
       - run: pnpm exec turbo run typecheck
+      - run: pnpm exec turbo run test
+      - run: pnpm --filter nest run test:e2e

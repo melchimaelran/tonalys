@@ -4,7 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 
-describe('AppController (e2e)', () => {
+describe('AuthController (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
@@ -21,22 +21,20 @@ describe('AppController (e2e)', () => {
     await app.close();
   });
 
-  it('GET / returns 401 without a token', () => {
-    return request(app.getHttpServer()).get('/').expect(401);
-  });
-
-  it('GET / returns 200 with a valid token', async () => {
-    const login = await request(app.getHttpServer())
+  it('POST /auth/login returns a JWT with the correct password', async () => {
+    const response = await request(app.getHttpServer())
       .post('/auth/login')
       .send({ password: 'test-password-e2e' })
       .expect(201);
 
-    const { access_token } = login.body as { access_token: string };
+    const body = response.body as { access_token: string };
+    expect(typeof body.access_token).toBe('string');
+  });
 
+  it('POST /auth/login returns 401 with the wrong password', () => {
     return request(app.getHttpServer())
-      .get('/')
-      .set('Authorization', `Bearer ${access_token}`)
-      .expect(200)
-      .expect('Hello World!');
+      .post('/auth/login')
+      .send({ password: 'wrong-password' })
+      .expect(401);
   });
 });
