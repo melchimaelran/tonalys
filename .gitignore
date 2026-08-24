@@ -1,6 +1,9 @@
 /project
 .claude
 CLAUDE.md
+.agents
+.windsurf
+skills-lock.json
 
 node_modules/
 .env

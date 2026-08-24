@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TrackSourceType {
+  UPLOAD
+  YOUTUBE
+}
+
+enum TrackStatus {
+  PENDING
+  PROCESSING
+  READY
+  ERROR
+}
+
+enum AnalysisJobStatus {
+  PENDING
+  PROCESSING
+  DONE
+  ERROR
+}
+
+model Track {
+  id              String          @id @default(uuid())
+  title           String
+  sourceType      TrackSourceType @map("source_type")
+  sourceUrl       String?         @map("source_url")
+  durationSeconds Float?          @map("duration_seconds")
+  audioFileKey    String?         @map("audio_file_key")
+  status          TrackStatus     @default(PENDING)
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  chordSegments ChordSegment[]
+  analysisJobs  AnalysisJob[]
+
+  @@map("tracks")
+}
+
+model ChordSegment {
+  id           String  @id @default(uuid())
+  trackId      String  @map("track_id")
+  track        Track   @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  startTime    Float   @map("start_time")
+  endTime      Float   @map("end_time")
+  root         String
+  chordType    String  @map("chord_type")
+  isManualEdit Boolean @default(false) @map("is_manual_edit")
+
+  @@map("chord_segments")
+}
+
+model AnalysisJob {
+  id           String            @id @default(uuid())
+  trackId      String            @map("track_id")
+  track        Track             @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  status       AnalysisJobStatus @default(PENDING)
+  errorMessage String?           @map("error_message")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  completedAt  DateTime?         @map("completed_at")
+
+  @@map("analysis_jobs")
+}
