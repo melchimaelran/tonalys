@@ -118,3 +118,18 @@ def test_mark_analysis_failed_marks_job_error_with_message(track_and_job):
     assert error_message == "MinIO object not found"
     assert completed_at is not None
     assert track_status == "ERROR"
+
+
+def test_mark_analysis_failed_with_no_track_id_still_marks_the_job(track_and_job):
+    _track_id, job_id, _audio_key = track_and_job
+
+    mark_analysis_failed(None, job_id, "payload missing trackId/jobId")
+
+    connection = psycopg2.connect(os.environ["DATABASE_URL"])
+    with connection, connection.cursor() as cur:
+        cur.execute("SELECT status, error_message FROM analysis_jobs WHERE id = %s", (job_id,))
+        job_status, error_message = cur.fetchone()
+    connection.close()
+
+    assert job_status == "ERROR"
+    assert error_message == "payload missing trackId/jobId"
