@@ -25,4 +25,9 @@ def download_audio(url: str, destination_dir: str) -> str:
     with yt_dlp.YoutubeDL(options) as downloader:
         info = downloader.extract_info(url, download=True)
         original_path = downloader.prepare_filename(info)
-        return os.path.splitext(original_path)[0] + ".wav"
+        wav_path = os.path.splitext(original_path)[0] + ".wav"
+
+        if not os.path.exists(wav_path):
+            raise RuntimeError(f"expected wav output at {wav_path} after extraction, found none")
+
+        return wav_path
