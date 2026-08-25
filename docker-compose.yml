@@ -61,6 +61,8 @@ services:
       context: .
       dockerfile: apps/next/Dockerfile
       target: runner
+    environment:
+      NEST_API_URL: http://nest:3001
     ports:
       - "3000:3000"
     healthcheck:
