@@ -25,6 +25,10 @@ export default function UploadPage() {
 
   function handleSourceChange(next: Source) {
     setSource(next);
+    // The dropzone unmounts/remounts across the toggle (losing its own
+    // file input), but this lifted selectedFile wouldn't reset on its
+    // own — clear it so "Selected: ..." doesn't linger after leaving and
+    // coming back to the file tab.
     setSelectedFile(null);
   }
 
