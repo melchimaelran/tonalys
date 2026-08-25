@@ -130,3 +130,15 @@ def test_worker_logs_and_rejects_a_malformed_message(capfd):
 
     captured = capfd.readouterr()
     assert "Failed to process message" in captured.out
+
+
+def test_worker_logs_and_rejects_a_job_for_an_unknown_track(capfd):
+    # Same shared-queue caveat as the tests above.
+    _publish({"trackId": str(uuid.uuid4()), "jobId": str(uuid.uuid4())})
+
+    with TestClient(app):
+        time.sleep(2)
+
+    captured = capfd.readouterr()
+    assert "Failed to process message" in captured.out
+    assert "unknown track" in captured.out

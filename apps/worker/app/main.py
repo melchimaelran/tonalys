@@ -29,6 +29,10 @@ async def handle_message(message: aio_pika.abc.AbstractIncomingMessage) -> None:
         job_id = payload["jobId"]
 
         audio_key = get_audio_file_key(track_id)
+        if audio_key is None:
+            print(f"Failed to process message: unknown track {track_id}", flush=True)
+            raise ValueError(f"unknown track {track_id}")
+
         with tempfile.TemporaryDirectory() as tmp_dir:
             audio_path = download_audio(audio_key, tmp_dir)
             audio = load_audio(audio_path)
