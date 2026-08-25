@@ -19,21 +19,20 @@ export class YoutubeService {
 
   async getVideoInfo(url: string): Promise<YoutubeVideoInfo> {
     const workerUrl = this.configService.get<string>('WORKER_URL')!;
-    let response: Response;
+    let data: WorkerYoutubeInfoResponse;
 
     try {
-      response = await fetch(
+      const response = await fetch(
         `${workerUrl}/youtube/info?url=${encodeURIComponent(url)}`,
       );
+      data = (await response.json()) as WorkerYoutubeInfoResponse;
     } catch {
-      // Worker unreachable (down, network blip) — a clear 503 beats an
-      // unhandled fetch error surfacing as an opaque 500.
+      // Worker unreachable, or an unexpected non-JSON/error response —
+      // a clear 503 beats an unhandled error surfacing as an opaque 500.
       throw new ServiceUnavailableException(
         'Unable to reach the analysis service, please try again shortly',
       );
     }
-
-    const data = (await response.json()) as WorkerYoutubeInfoResponse;
 
     return {
       available: data.available,

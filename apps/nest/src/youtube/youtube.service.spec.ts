@@ -76,4 +76,14 @@ describe('YoutubeService', () => {
       service.getVideoInfo('https://youtu.be/abc12345678'),
     ).rejects.toThrow(ServiceUnavailableException);
   });
+
+  it('throws a clear ServiceUnavailableException when the worker response is not valid JSON', async () => {
+    fetchMock.mockResolvedValue({
+      json: () => Promise.reject(new SyntaxError('Unexpected token')),
+    });
+
+    await expect(
+      service.getVideoInfo('https://youtu.be/abc12345678'),
+    ).rejects.toThrow(ServiceUnavailableException);
+  });
 });
