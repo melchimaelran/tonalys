@@ -3,3 +3,5 @@ uvicorn[standard]
 essentia
 aio-pika
 python-dotenv
+psycopg2-binary
+minio
