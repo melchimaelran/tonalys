@@ -14,7 +14,12 @@ ANALYSIS_JOBS_QUEUE = "analysis_jobs"
 
 async def handle_message(message: aio_pika.abc.AbstractIncomingMessage) -> None:
     async with message.process():
-        payload = json.loads(message.body)
+        try:
+            payload = json.loads(message.body)
+        except json.JSONDecodeError as error:
+            print(f"Failed to process message: {error}", flush=True)
+            raise
+
         # Real analysis (Essentia) lands in a later ticket — this just proves
         # the plumbing end to end for now.
         print(f"Received analysis job: {payload}", flush=True)
@@ -23,9 +28,14 @@ async def handle_message(message: aio_pika.abc.AbstractIncomingMessage) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     connection = await aio_pika.connect_robust(os.environ["RABBITMQ_URL"])
-    channel = await connection.channel()
-    queue = await channel.declare_queue(ANALYSIS_JOBS_QUEUE, durable=True)
-    await queue.consume(handle_message)
+
+    try:
+        channel = await connection.channel()
+        queue = await channel.declare_queue(ANALYSIS_JOBS_QUEUE, durable=True)
+        await queue.consume(handle_message)
+    except Exception:
+        await connection.close()
+        raise
 
     yield
 
