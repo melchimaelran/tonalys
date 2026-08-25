@@ -28,7 +28,7 @@ ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholde
 # generate only needs DATABASE_URL to be present/parseable, never connects — real
 # value comes from docker-compose's environment: block at container runtime
 RUN pnpm --filter nest exec prisma generate
-# generates apps/nest/generated/prisma — src imports from it, build fails without this
+# generates apps/nest/src/generated/prisma — src imports from it, build fails without this
 RUN pnpm exec turbo run build --filter=nest
 # produces apps/nest/dist (plain compiled JS)
 

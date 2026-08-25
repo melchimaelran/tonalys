@@ -87,6 +87,11 @@ services:
       RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
       JWT_SECRET: ${JWT_SECRET}
       AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: tracks
     ports:
       - "3001:3001"
     healthcheck:

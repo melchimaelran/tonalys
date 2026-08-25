@@ -1,0 +1,25 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Client } from 'minio';
+import { MINIO_CLIENT } from './minio-client.provider';
+
+@Injectable()
+export class StorageService {
+  constructor(
+    @Inject(MINIO_CLIENT) private readonly client: Client,
+    private readonly configService: ConfigService,
+  ) {}
+
+  async upload(key: string, buffer: Buffer): Promise<string> {
+    const bucket = this.configService.get<string>('MINIO_BUCKET')!;
+
+    const exists = await this.client.bucketExists(bucket);
+    if (!exists) {
+      await this.client.makeBucket(bucket);
+    }
+
+    await this.client.putObject(bucket, key, buffer, buffer.length);
+
+    return key;
+  }
+}
