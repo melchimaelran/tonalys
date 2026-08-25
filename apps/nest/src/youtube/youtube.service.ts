@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 export interface YoutubeVideoInfo {
@@ -19,9 +19,20 @@ export class YoutubeService {
 
   async getVideoInfo(url: string): Promise<YoutubeVideoInfo> {
     const workerUrl = this.configService.get<string>('WORKER_URL')!;
-    const response = await fetch(
-      `${workerUrl}/youtube/info?url=${encodeURIComponent(url)}`,
-    );
+    let response: Response;
+
+    try {
+      response = await fetch(
+        `${workerUrl}/youtube/info?url=${encodeURIComponent(url)}`,
+      );
+    } catch {
+      // Worker unreachable (down, network blip) — a clear 503 beats an
+      // unhandled fetch error surfacing as an opaque 500.
+      throw new ServiceUnavailableException(
+        'Unable to reach the analysis service, please try again shortly',
+      );
+    }
+
     const data = (await response.json()) as WorkerYoutubeInfoResponse;
 
     return {

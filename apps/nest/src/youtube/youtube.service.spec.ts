@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { ServiceUnavailableException } from '@nestjs/common';
 import { YoutubeService } from './youtube.service';
 
 describe('YoutubeService', () => {
@@ -66,5 +67,13 @@ describe('YoutubeService', () => {
       title: null,
       durationSeconds: null,
     });
+  });
+
+  it('throws a clear ServiceUnavailableException when the worker is unreachable', async () => {
+    fetchMock.mockRejectedValue(new TypeError('fetch failed'));
+
+    await expect(
+      service.getVideoInfo('https://youtu.be/abc12345678'),
+    ).rejects.toThrow(ServiceUnavailableException);
   });
 });
