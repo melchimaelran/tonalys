@@ -1,3 +1,5 @@
 fastapi
 uvicorn[standard]
 essentia
+aio-pika
+python-dotenv
