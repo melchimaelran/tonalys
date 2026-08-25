@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UploadModule } from './upload/upload.module';
+import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
 import { validateEnv } from './config/env.validation';
 
 @Module({
@@ -17,6 +18,7 @@ import { validateEnv } from './config/env.validation';
     AuthModule,
     PrismaModule,
     UploadModule,
+    RabbitMQModule,
   ],
   controllers: [AppController],
   providers: [AppService],
