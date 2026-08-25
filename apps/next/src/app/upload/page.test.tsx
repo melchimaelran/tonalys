@@ -39,4 +39,18 @@ describe("UploadPage", () => {
     expect(screen.getByText(/drag and drop an audio file/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/youtube link/i)).not.toBeInTheDocument();
   });
+
+  it("clears the selected file name after switching away and back to the file tab", () => {
+    render(<UploadPage />);
+    const file = new File(["audio"], "track.mp3", { type: "audio/mpeg" });
+    fireEvent.change(screen.getByLabelText(/drag and drop an audio file/i), {
+      target: { files: [file] },
+    });
+    expect(screen.getByText(/track\.mp3/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: /youtube link/i }));
+    fireEvent.click(screen.getByRole("tab", { name: /upload file/i }));
+
+    expect(screen.queryByText(/track\.mp3/i)).not.toBeInTheDocument();
+  });
 });

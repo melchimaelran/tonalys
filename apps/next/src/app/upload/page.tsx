@@ -12,6 +12,15 @@ export default function UploadPage() {
   const [source, setSource] = useState<Source>("file");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+  function handleSourceChange(next: Source) {
+    setSource(next);
+    // The dropzone unmounts/remounts across the toggle (losing its own
+    // file input), but this lifted selectedFile wouldn't reset on its
+    // own — clear it so "Selected: ..." doesn't linger after leaving and
+    // coming back to the file tab.
+    setSelectedFile(null);
+  }
+
   return (
     <div className="flex flex-1 items-center justify-center bg-background">
       <Card className="w-full max-w-sm">
@@ -26,7 +35,7 @@ export default function UploadPage() {
               size="sm"
               role="tab"
               aria-selected={source === "file"}
-              onClick={() => setSource("file")}
+              onClick={() => handleSourceChange("file")}
             >
               Upload file
             </Button>
@@ -36,7 +45,7 @@ export default function UploadPage() {
               size="sm"
               role="tab"
               aria-selected={source === "youtube"}
-              onClick={() => setSource("youtube")}
+              onClick={() => handleSourceChange("youtube")}
             >
               YouTube link
             </Button>
