@@ -10,6 +10,7 @@ const schema = Joi.object({
   MINIO_ROOT_PASSWORD: Joi.string().required(),
   MINIO_BUCKET: Joi.string().required(),
   RABBITMQ_URL: Joi.string().uri().required(),
+  WORKER_URL: Joi.string().uri().required(),
 })
   .unknown(true)
   .required();

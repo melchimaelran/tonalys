@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UploadModule } from './upload/upload.module';
 import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
+import { YoutubeModule } from './youtube/youtube.module';
 import { validateEnv } from './config/env.validation';
 
 @Module({
@@ -19,6 +20,7 @@ import { validateEnv } from './config/env.validation';
     PrismaModule,
     UploadModule,
     RabbitMQModule,
+    YoutubeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

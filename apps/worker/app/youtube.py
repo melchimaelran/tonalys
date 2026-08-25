@@ -31,3 +31,22 @@ def download_audio(url: str, destination_dir: str) -> str:
             raise RuntimeError(f"expected wav output at {wav_path} after extraction, found none")
 
         return wav_path
+
+
+def get_video_info(url: str) -> dict:
+    """Metadata lookup only (download=False) — used by Nest (TON-022) to
+    validate a submitted link (duration, availability) before creating a
+    Track/AnalysisJob. Any failure (invalid URL, private/deleted video,
+    ...) is reported as unavailable rather than raised — the caller only
+    needs a yes/no plus the numbers, not the specific yt-dlp error."""
+    try:
+        with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True, "noplaylist": True}) as extractor:
+            info = extractor.extract_info(url, download=False)
+    except Exception:
+        return {"available": False, "title": None, "duration_seconds": None}
+
+    return {
+        "available": True,
+        "title": info.get("title"),
+        "duration_seconds": info.get("duration"),
+    }
