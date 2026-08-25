@@ -1,8 +1,19 @@
+from collections import Counter
 from dataclasses import dataclass
+from typing import TypeVar
 
 import essentia.standard as es
 
+_Label = TypeVar("_Label")
+
 SAMPLE_RATE = 44100
+
+# ~1s at hopSize=2048/44100 (~0.046s/frame) — smooths frame-to-frame chord
+# flicker (very common on real, produced tracks; essentially absent on a
+# clean synthetic single-chord signal) without erasing genuine fast chord
+# changes. Tuned against 3 real songs (TON-017/ADR-037) — cut spurious
+# sub-300ms segments on one track from 58 down to 5.
+CHORD_SMOOTHING_WINDOW_FRAMES = 21
 
 
 @dataclass
@@ -47,6 +58,7 @@ def extract_chords(audio) -> list[ChordSegment]:
         hpcp_frames.append(hpcp(freqs, mags))
 
     chord_labels, _strengths = chords_detection(hpcp_frames)
+    chord_labels = _smooth_labels(list(chord_labels), CHORD_SMOOTHING_WINDOW_FRAMES)
 
     seconds_per_frame = hop_size / SAMPLE_RATE
     segments: list[ChordSegment] = []
@@ -65,6 +77,21 @@ def extract_chords(audio) -> list[ChordSegment]:
             segments.append(ChordSegment(start, end, root, chord_type))
 
     return segments
+
+
+def _smooth_labels(labels: list[_Label], window: int) -> list[_Label]:
+    """Replace each label with the majority label in its surrounding
+    window — a standard denoising pass for frame-level chord recognition
+    (real tracks flicker between chords frame to frame far more than a
+    human would ever perceive as an actual chord change)."""
+    half = window // 2
+    smoothed = []
+    for index in range(len(labels)):
+        lo = max(0, index - half)
+        hi = min(len(labels), index + half + 1)
+        neighborhood = labels[lo:hi]
+        smoothed.append(Counter(neighborhood).most_common(1)[0][0])
+    return smoothed
 
 
 def _parse_chord_label(label: str) -> tuple[str, str]:

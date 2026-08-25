@@ -1,6 +1,12 @@
 import numpy as np
 
-from app.analysis import extract_chords, extract_key, extract_tempo, load_audio
+from app.analysis import (
+    _smooth_labels,
+    extract_chords,
+    extract_key,
+    extract_tempo,
+    load_audio,
+)
 
 
 def test_extract_tempo_detects_120bpm(c_major_120bpm_wav):
@@ -36,6 +42,25 @@ def test_extract_chords_handles_empty_audio_without_crashing():
     empty = np.zeros(0, dtype=np.float32)
 
     assert extract_chords(empty) == []
+
+
+def test_smooth_labels_removes_a_single_frame_flicker():
+    # A lone "G" flicker surrounded by "C" on both sides — the kind of
+    # frame-to-frame noise real (produced, multi-instrument) tracks
+    # trigger constantly, as opposed to the clean synthetic fixture above.
+    labels = ["C", "C", "C", "G", "C", "C", "C"]
+
+    smoothed = _smooth_labels(labels, window=5)
+
+    assert smoothed == ["C", "C", "C", "C", "C", "C", "C"]
+
+
+def test_smooth_labels_keeps_a_real_sustained_change():
+    labels = ["C", "C", "C", "G", "G", "G", "G", "G", "C", "C"]
+
+    smoothed = _smooth_labels(labels, window=3)
+
+    assert smoothed == ["C", "C", "C", "G", "G", "G", "G", "G", "C", "C"]
 
 
 def test_extract_chords_handles_audio_shorter_than_one_frame_without_crashing():
