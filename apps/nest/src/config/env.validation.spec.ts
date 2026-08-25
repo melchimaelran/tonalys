@@ -10,6 +10,7 @@ const validEnv = {
   MINIO_ROOT_PASSWORD: 'changeme12345',
   MINIO_BUCKET: 'tonalys',
   RABBITMQ_URL: 'amqp://tonalys:changeme@localhost:5672',
+  WORKER_URL: 'http://localhost:8000',
 };
 
 describe('validateEnv', () => {
@@ -27,6 +28,7 @@ describe('validateEnv', () => {
     'MINIO_ROOT_PASSWORD',
     'MINIO_BUCKET',
     'RABBITMQ_URL',
+    'WORKER_URL',
   ] as const)('throws when %s is missing', (key) => {
     const incompleteEnv = { ...validEnv, [key]: undefined };
 

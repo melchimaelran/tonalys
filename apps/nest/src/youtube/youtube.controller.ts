@@ -1,0 +1,51 @@
+import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
+import { CreateYoutubeTrackDto } from './dto/create-youtube-track.dto';
+import { YoutubeService } from './youtube.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
+
+const MAX_DURATION_SECONDS = 10 * 60;
+
+@Controller('youtube')
+export class YoutubeController {
+  constructor(
+    private readonly youtubeService: YoutubeService,
+    private readonly prismaService: PrismaService,
+    private readonly rabbitMQService: RabbitMQService,
+  ) {}
+
+  @Post()
+  async create(@Body() dto: CreateYoutubeTrackDto) {
+    const info = await this.youtubeService.getVideoInfo(dto.url);
+
+    if (!info.available) {
+      throw new BadRequestException('Video is unavailable or private');
+    }
+    if (
+      info.durationSeconds === null ||
+      info.durationSeconds > MAX_DURATION_SECONDS
+    ) {
+      throw new BadRequestException('Video exceeds the 10 minute limit');
+    }
+
+    const { track, job } = await this.prismaService.$transaction(async (tx) => {
+      const createdTrack = await tx.track.create({
+        data: {
+          title: info.title ?? dto.url,
+          sourceType: 'YOUTUBE',
+          sourceUrl: dto.url,
+          durationSeconds: info.durationSeconds,
+          status: 'PENDING',
+        },
+      });
+      const createdJob = await tx.analysisJob.create({
+        data: { trackId: createdTrack.id, status: 'PENDING' },
+      });
+      return { track: createdTrack, job: createdJob };
+    });
+
+    this.rabbitMQService.publish({ trackId: track.id, jobId: job.id });
+
+    return track;
+  }
+}

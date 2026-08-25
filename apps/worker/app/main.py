@@ -16,6 +16,7 @@ from app.db import (
     save_chord_segments,
 )
 from app.storage import download_audio
+from app.youtube import get_video_info
 
 load_dotenv()
 
@@ -87,3 +88,8 @@ def root() -> dict[str, str]:
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/youtube/info")
+def youtube_info(url: str) -> dict:
+    return get_video_info(url)

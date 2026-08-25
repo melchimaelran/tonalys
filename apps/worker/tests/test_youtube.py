@@ -1,7 +1,7 @@
 import os
 
 from app.analysis import extract_chords, load_audio
-from app.youtube import download_audio
+from app.youtube import download_audio, get_video_info
 
 # "Me at the zoo" — the first video ever uploaded to YouTube, by YouTube's
 # own co-founder. Extremely unlikely to ever be taken down (historical
@@ -10,6 +10,11 @@ from app.youtube import download_audio
 # same "real infra" philosophy as the rest of the worker's test suite,
 # accepted as a real network dependency rather than mocking yt-dlp).
 TEST_VIDEO_URL = "https://www.youtube.com/watch?v=jNQXAC9IVRw"
+
+# A syntactically valid but nonexistent video id — yt-dlp reliably fails
+# to resolve it without depending on a real video's privacy status ever
+# changing (TON-022).
+NONEXISTENT_VIDEO_URL = "https://www.youtube.com/watch?v=00000000000"
 
 
 def test_download_audio_produces_a_file_the_analysis_pipeline_can_read(tmp_path):
@@ -25,3 +30,17 @@ def test_download_audio_produces_a_file_the_analysis_pipeline_can_read(tmp_path)
     # without crashing on real extracted audio, not any particular result.
     segments = extract_chords(audio)
     assert isinstance(segments, list)
+
+
+def test_get_video_info_returns_title_and_duration_for_a_valid_video():
+    info = get_video_info(TEST_VIDEO_URL)
+
+    assert info["available"] is True
+    assert info["title"]
+    assert 15 <= info["duration_seconds"] <= 25
+
+
+def test_get_video_info_returns_unavailable_for_a_nonexistent_video():
+    info = get_video_info(NONEXISTENT_VIDEO_URL)
+
+    assert info == {"available": False, "title": None, "duration_seconds": None}
