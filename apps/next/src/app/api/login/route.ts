@@ -31,7 +31,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Authentication service unavailable" }, { status: 502 });
   }
 
-  const { access_token } = (await nestResponse.json()) as { access_token: string };
+  let data: { access_token: string };
+  try {
+    data = (await nestResponse.json()) as { access_token: string };
+  } catch {
+    return NextResponse.json({ message: "Authentication service unavailable" }, { status: 502 });
+  }
+  const { access_token } = data;
 
   const response = NextResponse.json({ ok: true });
   response.cookies.set("token", access_token, {

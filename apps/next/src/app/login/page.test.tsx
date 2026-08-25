@@ -57,7 +57,9 @@ describe("LoginPage", () => {
 
   it("shows an error and stays on the page when the password is wrong", async () => {
     const user = userEvent.setup();
-    vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 401 }));
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ message: "Invalid password" }), { status: 401 }),
+    );
 
     render(<LoginPage />);
     await user.type(screen.getByLabelText(/email/i), "me@tonalys.dev");
@@ -66,6 +68,22 @@ describe("LoginPage", () => {
 
     expect(await screen.findByText(/invalid password/i)).toBeInTheDocument();
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it("shows the auth service's own error message when it's not a wrong-password 401", async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ message: "Authentication service unavailable" }), {
+        status: 502,
+      }),
+    );
+
+    render(<LoginPage />);
+    await user.type(screen.getByLabelText(/email/i), "me@tonalys.dev");
+    await user.type(screen.getByLabelText(/password/i), "correct-password");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    expect(await screen.findByText(/authentication service unavailable/i)).toBeInTheDocument();
   });
 
   it("shows an error and resets loading when the request fails outright", async () => {

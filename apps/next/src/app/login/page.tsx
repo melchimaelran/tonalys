@@ -27,7 +27,8 @@ export default function LoginPage() {
       });
 
       if (!response.ok) {
-        setError("Invalid password");
+        const data = (await response.json().catch(() => null)) as { message?: string } | null;
+        setError(data?.message ?? "Something went wrong. Please try again.");
         return;
       }
 
@@ -40,7 +41,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-zinc-50 dark:bg-black">
+    <div className="flex flex-1 items-center justify-center bg-background">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Sign in</CardTitle>
