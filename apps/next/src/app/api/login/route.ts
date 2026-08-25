@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+// Backend-for-Frontend (BFF) proxy with Next.js (Frontend) and NestJS 
 export async function POST(request: Request) {
   let body: unknown;
   try {
