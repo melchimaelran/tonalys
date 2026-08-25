@@ -14,8 +14,15 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit(): Promise<void> {
     const url = this.configService.get<string>('RABBITMQ_URL')!;
     this.connection = await amqp.connect(url);
-    this.channel = await this.connection.createChannel();
-    await this.channel.assertQueue(ANALYSIS_JOBS_QUEUE, { durable: true });
+
+    try {
+      this.channel = await this.connection.createChannel();
+      await this.channel.assertQueue(ANALYSIS_JOBS_QUEUE, { durable: true });
+    } catch (error) {
+      await this.connection.close();
+      this.connection = undefined;
+      throw error;
+    }
   }
 
   async onModuleDestroy(): Promise<void> {

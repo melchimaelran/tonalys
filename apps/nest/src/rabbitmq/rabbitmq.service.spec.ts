@@ -67,4 +67,12 @@ describe('RabbitMQService', () => {
   it('throws if publish is called before the channel is initialized', () => {
     expect(() => service.publish({ jobId: 'job-1' })).toThrow();
   });
+
+  it('closes the connection if channel setup fails after connect succeeds', async () => {
+    channel.assertQueue.mockRejectedValue(new Error('queue setup failed'));
+
+    await expect(service.onModuleInit()).rejects.toThrow('queue setup failed');
+
+    expect(connection.close).toHaveBeenCalled();
+  });
 });
