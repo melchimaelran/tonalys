@@ -2,6 +2,14 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Class-based, not media-query-based — kept intentionally inert (no `.dark`
+   class is ever applied, see layout.tsx). Removing this line does NOT make
+   dark: utilities inert; it hands them to Tailwind's default
+   prefers-color-scheme variant instead, making shadcn's own dark: classes
+   (input.tsx, button.tsx) react to OS preference — inconsistent with the
+   dark-only, no-toggle design below. */
+@custom-variant dark (&:is(.dark *));
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

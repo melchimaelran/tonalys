@@ -69,6 +69,38 @@ describe("POST /api/login", () => {
     expect(response.cookies.get("token")?.secure).toBe(true);
   });
 
+  it("marks the cookie secure regardless of x-forwarded-proto casing", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ access_token: "signed-jwt-token" }), { status: 201 }),
+    );
+
+    const request = new Request("http://localhost/api/login", {
+      method: "POST",
+      headers: { "x-forwarded-proto": "HTTPS" },
+      body: JSON.stringify({ password: "correct-password" }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.cookies.get("token")?.secure).toBe(true);
+  });
+
+  it("marks the cookie secure from a chained-proxy x-forwarded-proto value", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ access_token: "signed-jwt-token" }), { status: 201 }),
+    );
+
+    const request = new Request("http://localhost/api/login", {
+      method: "POST",
+      headers: { "x-forwarded-proto": "https, http" },
+      body: JSON.stringify({ password: "correct-password" }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.cookies.get("token")?.secure).toBe(true);
+  });
+
   it("returns 401 when the password is wrong", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 401 }));
 
