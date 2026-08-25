@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
 import { StorageService } from '../storage/storage.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
 
 // Matches the client-side limit (apps/next's UploadDropzone, TON-011) —
 // server-side enforcement too, since the client check is trivially
@@ -21,6 +22,7 @@ export class UploadController {
   constructor(
     private readonly storageService: StorageService,
     private readonly prismaService: PrismaService,
+    private readonly rabbitMQService: RabbitMQService,
   ) {}
 
   @Post()
@@ -42,18 +44,34 @@ export class UploadController {
     const key = `${randomUUID()}${extension}`;
     await this.storageService.upload(key, file.buffer);
 
+    let track: { id: string };
+    let job: { id: string };
+
     try {
-      return await this.prismaService.track.create({
-        data: {
-          title: file.originalname,
-          sourceType: 'UPLOAD',
-          status: 'PENDING',
-          audioFileKey: key,
-        },
-      });
+      ({ track, job } = await this.prismaService.$transaction(async (tx) => {
+        const createdTrack = await tx.track.create({
+          data: {
+            title: file.originalname,
+            sourceType: 'UPLOAD',
+            status: 'PENDING',
+            audioFileKey: key,
+          },
+        });
+        const createdJob = await tx.analysisJob.create({
+          data: {
+            trackId: createdTrack.id,
+            status: 'PENDING',
+          },
+        });
+        return { track: createdTrack, job: createdJob };
+      }));
     } catch (error) {
       await this.storageService.remove(key).catch(() => undefined);
       throw error;
     }
+
+    this.rabbitMQService.publish({ trackId: track.id, jobId: job.id });
+
+    return track;
   }
 }
