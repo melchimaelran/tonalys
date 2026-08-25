@@ -75,4 +75,13 @@ describe('RabbitMQService', () => {
 
     expect(connection.close).toHaveBeenCalled();
   });
+
+  it('still closes the connection on destroy if closing the channel throws', async () => {
+    await service.onModuleInit();
+    channel.close.mockRejectedValue(new Error('channel already closed'));
+
+    await service.onModuleDestroy();
+
+    expect(connection.close).toHaveBeenCalled();
+  });
 });
