@@ -72,6 +72,6 @@ export class UploadController {
 
     this.rabbitMQService.publish({ trackId: track.id, jobId: job.id });
 
-    return track;
+    return { ...track, jobId: job.id };
   }
 }

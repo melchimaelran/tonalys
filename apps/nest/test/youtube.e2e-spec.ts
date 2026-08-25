@@ -5,7 +5,9 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from './../src/prisma/prisma.service';
 
-async function waitForJobToLeavePending(
+const TERMINAL_STATUSES = ['DONE', 'ERROR'];
+
+async function waitForTerminalStatus(
   prismaService: PrismaService,
   jobId: string,
   timeoutMs = 15000,
@@ -15,10 +17,10 @@ async function waitForJobToLeavePending(
     const job = await prismaService.analysisJob.findUniqueOrThrow({
       where: { id: jobId },
     });
-    if (job.status !== 'PENDING') return job.status;
+    if (TERMINAL_STATUSES.includes(job.status)) return job.status;
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  throw new Error('timed out waiting for the job to leave PENDING');
+  throw new Error('timed out waiting for the job to reach a terminal status');
 }
 
 // These hit the real worker (WORKER_URL) which in turn hits the real
@@ -104,6 +106,7 @@ describe('YoutubeController (e2e)', () => {
       title: string;
       status: string;
       sourceUrl: string;
+      jobId: string;
     };
     createdTrackIds.push(track.id);
 
@@ -114,17 +117,18 @@ describe('YoutubeController (e2e)', () => {
       where: { trackId: track.id },
     });
     expect(analysisJobs).toHaveLength(1);
-    expect(analysisJobs[0]?.status).toBe('PENDING');
+    expect(track.jobId).toBe(analysisJobs[0]?.id);
+    // Not asserting the job is still PENDING here — with a live worker
+    // (needed for this test in the first place) it can already be
+    // PROCESSING or even ERROR by the time this query runs (TON-023
+    // marks PROCESSING as soon as the worker picks the message up).
 
     // The worker did receive and process the message (proving Nest
     // published it correctly) — it lands on ERROR here rather than DONE
     // because YouTube tracks aren't wired into the consumer's download
     // step yet (no audio_file_key to fetch from MinIO), a known,
     // separate gap tracked outside this ticket's scope.
-    const finalStatus = await waitForJobToLeavePending(
-      prismaService,
-      analysisJobs[0].id,
-    );
+    const finalStatus = await waitForTerminalStatus(prismaService, track.jobId);
     expect(finalStatus).toBe('ERROR');
   }, 20000);
 });

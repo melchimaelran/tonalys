@@ -9,6 +9,7 @@ from app.db import (
     get_audio_file_key,
     mark_analysis_complete,
     mark_analysis_failed,
+    mark_analysis_processing,
     save_chord_segments,
 )
 
@@ -78,6 +79,23 @@ def test_save_chord_segments_inserts_a_row_per_segment(track_and_job):
     connection.close()
 
     assert rows == [("C", "major", 0.0, 1.0), ("A", "minor", 1.0, 2.0)]
+
+
+def test_mark_analysis_processing_marks_job_and_track_processing(track_and_job):
+    track_id, job_id, _audio_key = track_and_job
+
+    mark_analysis_processing(track_id, job_id)
+
+    connection = psycopg2.connect(os.environ["DATABASE_URL"])
+    with connection, connection.cursor() as cur:
+        cur.execute("SELECT status FROM analysis_jobs WHERE id = %s", (job_id,))
+        (job_status,) = cur.fetchone()
+        cur.execute("SELECT status FROM tracks WHERE id = %s", (track_id,))
+        (track_status,) = cur.fetchone()
+    connection.close()
+
+    assert job_status == "PROCESSING"
+    assert track_status == "PROCESSING"
 
 
 def test_mark_analysis_complete_marks_job_done_and_track_ready(track_and_job):

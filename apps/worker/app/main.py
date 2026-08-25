@@ -13,6 +13,7 @@ from app.db import (
     get_audio_file_key,
     mark_analysis_complete,
     mark_analysis_failed,
+    mark_analysis_processing,
     save_chord_segments,
 )
 from app.storage import download_audio
@@ -42,6 +43,8 @@ async def handle_message(message: aio_pika.abc.AbstractIncomingMessage) -> None:
         try:
             if track_id is None or job_id is None:
                 raise ValueError("payload missing trackId/jobId")
+
+            mark_analysis_processing(track_id, job_id)
 
             audio_key = get_audio_file_key(track_id)
             if audio_key is None:

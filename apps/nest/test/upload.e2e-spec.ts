@@ -95,6 +95,7 @@ describe('UploadController (e2e)', () => {
           title: string;
           status: string;
           audioFileKey: string;
+          jobId: string;
         };
         createdTrackIds.push(track.id);
         uploadedKeys.push(track.audioFileKey);
@@ -113,6 +114,7 @@ describe('UploadController (e2e)', () => {
         });
         expect(analysisJobs).toHaveLength(1);
         expect(analysisJobs[0]?.status).toBe('PENDING');
+        expect(track.jobId).toBe(analysisJobs[0]?.id);
 
         const message = await new Promise<Record<string, unknown>>(
           (resolve, reject) => {
