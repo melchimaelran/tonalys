@@ -40,7 +40,11 @@ describe('UploadController (e2e)', () => {
       createdTrackIds.length = 0;
     }
     if (uploadedKeys.length > 0) {
-      await Promise.all(uploadedKeys.map((key) => storageService.remove(key)));
+      await Promise.all(
+        uploadedKeys.map((key) =>
+          storageService.remove(key).catch(() => undefined),
+        ),
+      );
       uploadedKeys.length = 0;
     }
     await app.close();
@@ -58,6 +62,16 @@ describe('UploadController (e2e)', () => {
       .post('/upload')
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(400);
+  });
+
+  it('POST /upload rejects a file larger than 20 MB', () => {
+    const oversized = Buffer.alloc(20 * 1024 * 1024 + 1);
+
+    return request(app.getHttpServer())
+      .post('/upload')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .attach('file', oversized, 'big.mp3')
+      .expect(413);
   });
 
   it('POST /upload stores the file and creates a pending Track', async () => {

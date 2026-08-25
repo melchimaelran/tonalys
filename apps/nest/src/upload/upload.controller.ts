@@ -11,6 +11,11 @@ import { extname } from 'node:path';
 import { StorageService } from '../storage/storage.service';
 import { PrismaService } from '../prisma/prisma.service';
 
+// Matches the client-side limit (apps/next's UploadDropzone, TON-011) —
+// server-side enforcement too, since the client check is trivially
+// bypassed by calling this endpoint directly.
+const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+
 @Controller('upload')
 export class UploadController {
   constructor(
@@ -19,7 +24,9 @@ export class UploadController {
   ) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_FILE_SIZE_BYTES } }),
+  )
   async upload(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file provided');
