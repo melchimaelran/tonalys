@@ -13,8 +13,8 @@ class ChordSegment:
     chord_type: str
 
 
-def load_audio(path: str, sample_rate: int = SAMPLE_RATE):
-    return es.MonoLoader(filename=path, sampleRate=sample_rate)()
+def load_audio(path: str):
+    return es.MonoLoader(filename=path, sampleRate=SAMPLE_RATE)()
 
 
 def extract_tempo(audio) -> float:
@@ -27,9 +27,7 @@ def extract_key(audio) -> tuple[str, str]:
     return key, scale
 
 
-def extract_chords(
-    audio, sample_rate: int = SAMPLE_RATE
-) -> list[ChordSegment]:
+def extract_chords(audio) -> list[ChordSegment]:
     frame_size = 4096
     hop_size = 2048
 
@@ -37,7 +35,7 @@ def extract_chords(
     spectrum = es.Spectrum()
     spectral_peaks = es.SpectralPeaks()
     hpcp = es.HPCP()
-    chords_detection = es.ChordsDetection(hopSize=hop_size, sampleRate=sample_rate)
+    chords_detection = es.ChordsDetection(hopSize=hop_size, sampleRate=SAMPLE_RATE)
 
     hpcp_frames = []
     for frame in es.FrameGenerator(
@@ -50,7 +48,7 @@ def extract_chords(
 
     chord_labels, _strengths = chords_detection(hpcp_frames)
 
-    seconds_per_frame = hop_size / sample_rate
+    seconds_per_frame = hop_size / SAMPLE_RATE
     segments: list[ChordSegment] = []
     for index, label in enumerate(chord_labels):
         root, chord_type = _parse_chord_label(label)
