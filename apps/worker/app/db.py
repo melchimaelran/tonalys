@@ -55,3 +55,16 @@ def mark_analysis_complete(track_id: str, job_id: str) -> None:
             (datetime.now(timezone.utc), job_id),
         )
         cur.execute("UPDATE tracks SET status = 'READY' WHERE id = %s", (track_id,))
+
+
+def mark_analysis_failed(track_id: str, job_id: str, error_message: str) -> None:
+    with _cursor() as cur:
+        cur.execute(
+            """
+            UPDATE analysis_jobs
+            SET status = 'ERROR', error_message = %s, completed_at = %s
+            WHERE id = %s
+            """,
+            (error_message, datetime.now(timezone.utc), job_id),
+        )
+        cur.execute("UPDATE tracks SET status = 'ERROR' WHERE id = %s", (track_id,))

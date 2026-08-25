@@ -5,7 +5,12 @@ import psycopg2
 import pytest
 
 from app.analysis import ChordSegment
-from app.db import get_audio_file_key, mark_analysis_complete, save_chord_segments
+from app.db import (
+    get_audio_file_key,
+    mark_analysis_complete,
+    mark_analysis_failed,
+    save_chord_segments,
+)
 
 
 @pytest.fixture
@@ -91,3 +96,25 @@ def test_mark_analysis_complete_marks_job_done_and_track_ready(track_and_job):
     assert job_status == "DONE"
     assert completed_at is not None
     assert track_status == "READY"
+
+
+def test_mark_analysis_failed_marks_job_error_with_message(track_and_job):
+    track_id, job_id, _audio_key = track_and_job
+
+    mark_analysis_failed(track_id, job_id, "MinIO object not found")
+
+    connection = psycopg2.connect(os.environ["DATABASE_URL"])
+    with connection, connection.cursor() as cur:
+        cur.execute(
+            "SELECT status, error_message, completed_at FROM analysis_jobs WHERE id = %s",
+            (job_id,),
+        )
+        job_status, error_message, completed_at = cur.fetchone()
+        cur.execute("SELECT status FROM tracks WHERE id = %s", (track_id,))
+        (track_status,) = cur.fetchone()
+    connection.close()
+
+    assert job_status == "ERROR"
+    assert error_message == "MinIO object not found"
+    assert completed_at is not None
+    assert track_status == "ERROR"

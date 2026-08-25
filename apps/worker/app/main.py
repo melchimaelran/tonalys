@@ -9,7 +9,12 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 
 from app.analysis import extract_chords, load_audio
-from app.db import get_audio_file_key, mark_analysis_complete, save_chord_segments
+from app.db import (
+    get_audio_file_key,
+    mark_analysis_complete,
+    mark_analysis_failed,
+    save_chord_segments,
+)
 from app.storage import download_audio
 
 load_dotenv()
@@ -25,21 +30,33 @@ async def handle_message(message: aio_pika.abc.AbstractIncomingMessage) -> None:
             print(f"Failed to process message: {error}", flush=True)
             raise
 
-        track_id = payload["trackId"]
-        job_id = payload["jobId"]
+        track_id = payload.get("trackId")
+        job_id = payload.get("jobId")
 
-        audio_key = get_audio_file_key(track_id)
-        if audio_key is None:
-            print(f"Failed to process message: unknown track {track_id}", flush=True)
-            raise ValueError(f"unknown track {track_id}")
+        # Any failure past this point is an analysis failure, not a queue
+        # problem — caught and recorded on the job/track rather than left
+        # to nack (RabbitMQ would otherwise requeue and retry the same
+        # message forever). No job_id means there's nothing to mark, so
+        # that case is logged only.
+        try:
+            if track_id is None or job_id is None:
+                raise ValueError("payload missing trackId/jobId")
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            audio_path = download_audio(audio_key, tmp_dir)
-            audio = load_audio(audio_path)
-            segments = extract_chords(audio)
+            audio_key = get_audio_file_key(track_id)
+            if audio_key is None:
+                raise ValueError(f"unknown track {track_id}")
 
-        save_chord_segments(track_id, segments)
-        mark_analysis_complete(track_id, job_id)
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                audio_path = download_audio(audio_key, tmp_dir)
+                audio = load_audio(audio_path)
+                segments = extract_chords(audio)
+
+            save_chord_segments(track_id, segments)
+            mark_analysis_complete(track_id, job_id)
+        except Exception as error:
+            print(f"Failed to process message: {error}", flush=True)
+            if job_id is not None:
+                mark_analysis_failed(track_id, job_id, str(error))
 
 
 @asynccontextmanager
