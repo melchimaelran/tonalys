@@ -39,10 +39,17 @@ export async function POST(request: Request) {
   }
   const { access_token } = data;
 
+  // NODE_ENV=production doesn't mean HTTPS here — the runner image ships
+  // production-mode but TLS termination only lands with TON-048's reverse
+  // proxy. Detect the actual scheme instead (x-forwarded-proto once behind it).
+  const isHttps =
+    request.headers.get("x-forwarded-proto") === "https" ||
+    new URL(request.url).protocol === "https:";
+
   const response = NextResponse.json({ ok: true });
   response.cookies.set("token", access_token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isHttps,
     sameSite: "lax",
     path: "/",
   });
