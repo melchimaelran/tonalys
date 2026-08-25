@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { proxy } from "./proxy";
 
@@ -40,6 +40,19 @@ describe("proxy", () => {
     const response = proxy(makeRequest("/upload", `token=${token}`));
 
     expect(response.headers.get("location")).toBe("http://localhost/login");
+  });
+
+  it("redirects to /login when exp equals the current time (RFC 7519 §4.1.4 — must be strictly before exp)", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(1_000_000_000_000));
+    try {
+      const token = makeJwt({ exp: 1_000_000_000_000 / 1000 });
+      const response = proxy(makeRequest("/upload", `token=${token}`));
+
+      expect(response.headers.get("location")).toBe("http://localhost/login");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("redirects to /login when the token cookie is not a decodable JWT", () => {
