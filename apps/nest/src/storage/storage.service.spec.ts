@@ -9,6 +9,7 @@ describe('StorageService', () => {
     bucketExists: jest.Mock;
     makeBucket: jest.Mock;
     putObject: jest.Mock;
+    removeObject: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -16,6 +17,7 @@ describe('StorageService', () => {
       bucketExists: jest.fn(),
       makeBucket: jest.fn(),
       putObject: jest.fn(),
+      removeObject: jest.fn(),
     };
 
     const module = await Test.createTestingModule({
@@ -53,5 +55,11 @@ describe('StorageService', () => {
     await service.upload('abc.mp3', Buffer.from('audio'));
 
     expect(client.makeBucket).not.toHaveBeenCalled();
+  });
+
+  it('removes an object from the bucket', async () => {
+    await service.remove('abc.mp3');
+
+    expect(client.removeObject).toHaveBeenCalledWith('tracks', 'abc.mp3');
   });
 });

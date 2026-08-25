@@ -22,4 +22,9 @@ export class StorageService {
 
     return key;
   }
+
+  async remove(key: string): Promise<void> {
+    const bucket = this.configService.get<string>('MINIO_BUCKET')!;
+    await this.client.removeObject(bucket, key);
+  }
 }

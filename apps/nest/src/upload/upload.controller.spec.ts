@@ -5,11 +5,14 @@ import { PrismaService } from '../prisma/prisma.service';
 
 describe('UploadController', () => {
   let controller: UploadController;
-  let storageService: { upload: jest.Mock };
+  let storageService: { upload: jest.Mock; remove: jest.Mock };
   let prismaService: { track: { create: jest.Mock } };
 
   beforeEach(() => {
-    storageService = { upload: jest.fn() };
+    storageService = {
+      upload: jest.fn(),
+      remove: jest.fn().mockResolvedValue(undefined),
+    };
     prismaService = { track: { create: jest.fn() } };
 
     controller = new UploadController(
@@ -46,7 +49,8 @@ describe('UploadController', () => {
       string,
       Buffer,
     ];
-    expect(uploadKey).toContain('song.mp3');
+    expect(uploadKey).toMatch(/\.mp3$/);
+    expect(uploadKey).not.toContain('song.mp3');
     expect(uploadedBuffer).toBe(file.buffer);
 
     expect(prismaService.track.create).toHaveBeenCalledWith({
@@ -62,5 +66,22 @@ describe('UploadController', () => {
       title: 'song.mp3',
       status: 'PENDING',
     });
+    expect(storageService.remove).not.toHaveBeenCalled();
+  });
+
+  it('removes the uploaded file if creating the Track fails', async () => {
+    const file = {
+      originalname: 'song.mp3',
+      buffer: Buffer.from('audio-bytes'),
+    } as Express.Multer.File;
+    storageService.upload.mockImplementation((key: string) =>
+      Promise.resolve(key),
+    );
+    prismaService.track.create.mockRejectedValue(new Error('db down'));
+
+    await expect(controller.upload(file)).rejects.toThrow('db down');
+
+    const [uploadKey] = storageService.upload.mock.calls[0] as [string];
+    expect(storageService.remove).toHaveBeenCalledWith(uploadKey);
   });
 });

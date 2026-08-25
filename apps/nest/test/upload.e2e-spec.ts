@@ -4,12 +4,15 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from './../src/prisma/prisma.service';
+import { StorageService } from './../src/storage/storage.service';
 
 describe('UploadController (e2e)', () => {
   let app: INestApplication<App>;
   let prismaService: PrismaService;
+  let storageService: StorageService;
   let accessToken: string;
   const createdTrackIds: string[] = [];
+  const uploadedKeys: string[] = [];
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -20,6 +23,7 @@ describe('UploadController (e2e)', () => {
     app.useGlobalPipes(new ValidationPipe());
     await app.init();
     prismaService = app.get(PrismaService);
+    storageService = app.get(StorageService);
 
     const login = await request(app.getHttpServer())
       .post('/auth/login')
@@ -34,6 +38,10 @@ describe('UploadController (e2e)', () => {
         where: { id: { in: createdTrackIds } },
       });
       createdTrackIds.length = 0;
+    }
+    if (uploadedKeys.length > 0) {
+      await Promise.all(uploadedKeys.map((key) => storageService.remove(key)));
+      uploadedKeys.length = 0;
     }
     await app.close();
   });
@@ -66,10 +74,11 @@ describe('UploadController (e2e)', () => {
       audioFileKey: string;
     };
     createdTrackIds.push(track.id);
+    uploadedKeys.push(track.audioFileKey);
 
     expect(track.title).toBe('song.mp3');
     expect(track.status).toBe('PENDING');
-    expect(track.audioFileKey).toContain('song.mp3');
+    expect(track.audioFileKey).toMatch(/\.mp3$/);
 
     const stored = await prismaService.track.findUnique({
       where: { id: track.id },
