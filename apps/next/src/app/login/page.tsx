@@ -19,20 +19,24 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    const response = await fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
 
-    setLoading(false);
+      if (!response.ok) {
+        setError("Invalid password");
+        return;
+      }
 
-    if (!response.ok) {
-      setError("Invalid password");
-      return;
+      router.push("/");
+    } catch {
+      setError("Network error — check your connection and try again");
+    } finally {
+      setLoading(false);
     }
-
-    router.push("/");
   }
 
   return (
@@ -51,6 +55,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={loading}
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -61,6 +66,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={loading}
               />
             </div>
             {error && <p className="text-xs text-destructive">{error}</p>}

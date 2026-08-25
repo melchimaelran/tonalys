@@ -50,4 +50,41 @@ describe("POST /api/login", () => {
 
     expect(response.status).toBe(401);
   });
+
+  it("returns 400 when the request body is not valid JSON", async () => {
+    const request = new Request("http://localhost/api/login", {
+      method: "POST",
+      body: "not json",
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+  });
+
+  it("returns 502 when the auth service is unreachable", async () => {
+    vi.mocked(fetch).mockRejectedValue(new Error("fetch failed"));
+
+    const request = new Request("http://localhost/api/login", {
+      method: "POST",
+      body: JSON.stringify({ password: "correct-password" }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(502);
+  });
+
+  it("returns 502 (not 401) when the auth service errors for a reason other than a wrong password", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 500 }));
+
+    const request = new Request("http://localhost/api/login", {
+      method: "POST",
+      body: JSON.stringify({ password: "correct-password" }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(502);
+  });
 });
