@@ -6,8 +6,9 @@
 # After `docker compose down -v` (data wiped): ./scripts/dev-up.sh --seed
 #
 # Does NOT start next/nest — run those natively for hot reload:
-#   pnpm --filter nest start:dev
-#   pnpm --filter next dev
+#   pnpm --filter next dev             # :3000
+#   PORT=3001 pnpm --filter nest start:dev  # :3001 — nest defaults to
+#     3000 (apps/nest/src/main.ts) if PORT isn't set, colliding with next
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -37,8 +38,8 @@ fi
 cat <<'EOF'
 
 ==> Infra ready. Start the apps natively for hot reload:
-    pnpm --filter nest start:dev
-    pnpm --filter next dev
+    pnpm --filter next dev                    # :3000
+    PORT=3001 pnpm --filter nest start:dev    # :3001
 
     # worker (Python) — one-time venv setup:
     #   cd apps/worker && python3 -m venv .venv && source .venv/bin/activate \
