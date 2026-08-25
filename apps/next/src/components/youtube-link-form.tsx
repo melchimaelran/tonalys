@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+// www. is only ever valid on youtube.com — youtu.be has no www subdomain.
 const YOUTUBE_URL_PATTERN =
-  /^https?:\/\/(www\.)?(youtube\.com\/watch\?v=[\w-]{11}(&\S*)?|youtu\.be\/[\w-]{11}(\?\S*)?)$/;
+  /^https?:\/\/((www\.)?youtube\.com\/watch\?v=[\w-]{11}(&\S*)?|youtu\.be\/[\w-]{11}(\?\S*)?)$/;
 
 export function isValidYoutubeUrl(url: string): boolean {
   return YOUTUBE_URL_PATTERN.test(url.trim());

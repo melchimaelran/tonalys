@@ -64,6 +64,19 @@ describe("YoutubeLinkForm", () => {
     expect(onUrlSubmitted).toHaveBeenCalledWith("https://youtu.be/dQw4w9WgXcQ");
   });
 
+  it("rejects a youtu.be URL with a www subdomain (not a real YouTube host)", () => {
+    const onUrlSubmitted = vi.fn();
+    render(<YoutubeLinkForm onUrlSubmitted={onUrlSubmitted} />);
+
+    fireEvent.change(screen.getByLabelText(/youtube link/i), {
+      target: { value: "https://www.youtu.be/dQw4w9WgXcQ" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /analyze/i }));
+
+    expect(onUrlSubmitted).not.toHaveBeenCalled();
+    expect(screen.getByText(/enter a valid youtube video url/i)).toBeInTheDocument();
+  });
+
   it("trims surrounding whitespace before validating and submitting", () => {
     const onUrlSubmitted = vi.fn();
     render(<YoutubeLinkForm onUrlSubmitted={onUrlSubmitted} />);
