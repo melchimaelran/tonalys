@@ -4,6 +4,12 @@ FROM python:3.12-slim AS base
 
 WORKDIR /app
 
+# ffmpeg: yt-dlp (TON-021) re-encodes downloaded YouTube audio to wav
+# through it — Essentia's MonoLoader can't decode the raw webm/opus
+# container yt-dlp downloads directly (verified: "Unsupported codec!").
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 # essentia ships manylinux wheels for cp312 — no system build deps
