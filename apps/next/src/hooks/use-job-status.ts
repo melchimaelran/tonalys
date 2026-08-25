@@ -19,7 +19,11 @@ async function fetchJobStatus(jobId: string): Promise<JobStatus> {
   if (!response.ok) {
     throw new Error("Failed to fetch job status");
   }
-  return (await response.json()) as JobStatus;
+  try {
+    return (await response.json()) as JobStatus;
+  } catch {
+    throw new Error("Received an unexpected response while fetching job status");
+  }
 }
 
 export function useJobStatus(jobId: string | null) {

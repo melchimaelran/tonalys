@@ -63,4 +63,16 @@ describe("useJobStatus", () => {
 
     expect(fetch).not.toHaveBeenCalled();
   });
+
+  it("errors out cleanly when the response body isn't valid JSON", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response("not json", { status: 200 }),
+    );
+
+    const { result } = renderHook(() => useJobStatus("job-1"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
 });
