@@ -109,6 +109,7 @@ describe('YoutubeController', () => {
       id: 'track-1',
       title: 'A great song',
       status: 'PENDING',
+      jobId: 'job-1',
     });
   });
 });

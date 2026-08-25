@@ -87,6 +87,7 @@ describe('UploadController', () => {
       id: 'track-1',
       title: 'song.mp3',
       status: 'PENDING',
+      jobId: 'job-1',
     });
     expect(storageService.remove).not.toHaveBeenCalled();
     expect(rabbitMQService.publish).toHaveBeenCalledWith({
