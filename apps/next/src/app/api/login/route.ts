@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-  let body: { password?: string };
+  let body: unknown;
   try {
-    body = (await request.json()) as { password?: string };
+    body = await request.json();
   } catch {
     return NextResponse.json({ message: "Invalid request body" }, { status: 400 });
   }
 
-  const { password } = body;
-  if (!password) {
+  const password =
+    body && typeof body === "object" ? (body as { password?: unknown }).password : undefined;
+  if (typeof password !== "string" || !password) {
     return NextResponse.json({ message: "Password is required" }, { status: 400 });
   }
 
@@ -31,13 +32,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Authentication service unavailable" }, { status: 502 });
   }
 
-  let data: { access_token: string };
+  let data: { access_token?: string };
   try {
-    data = (await nestResponse.json()) as { access_token: string };
+    data = (await nestResponse.json()) as { access_token?: string };
   } catch {
     return NextResponse.json({ message: "Authentication service unavailable" }, { status: 502 });
   }
   const { access_token } = data;
+  if (!access_token) {
+    return NextResponse.json({ message: "Authentication service unavailable" }, { status: 502 });
+  }
 
   // NODE_ENV=production doesn't mean HTTPS here — the runner image ships
   // production-mode but TLS termination only lands with TON-048's reverse
