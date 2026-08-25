@@ -68,4 +68,12 @@ describe("GET /api/jobs/[id]", () => {
 
     expect(response.status).toBe(502);
   });
+
+  it("returns 502 when nest responds with a non-JSON body", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response("not json", { status: 200 }));
+
+    const response = await GET(makeRequest("token=signed-jwt"), makeContext("job-1"));
+
+    expect(response.status).toBe(502);
+  });
 });

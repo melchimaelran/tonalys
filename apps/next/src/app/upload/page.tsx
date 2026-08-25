@@ -74,9 +74,15 @@ export default function UploadPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {jobId ? (
-            <p data-testid="job-status" className="text-sm">
-              Status: {jobStatus.data?.status ?? "loading"}
-            </p>
+            jobStatus.isError ? (
+              <p data-testid="job-status-error" className="text-sm text-destructive">
+                Lost track of this job&apos;s status — please refresh
+              </p>
+            ) : (
+              <p data-testid="job-status" className="text-sm">
+                Status: {jobStatus.data?.status ?? "loading"}
+              </p>
+            )
           ) : (
             <>
               <div className="flex gap-2" role="tablist" aria-label="Track source">

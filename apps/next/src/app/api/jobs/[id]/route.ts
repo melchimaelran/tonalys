@@ -20,7 +20,12 @@ export async function GET(
     return NextResponse.json({ message: "Analysis service unavailable" }, { status: 502 });
   }
 
-  const data: unknown = await nestResponse.json().catch(() => null);
+  let data: unknown;
+  try {
+    data = await nestResponse.json();
+  } catch {
+    return NextResponse.json({ message: "Analysis service unavailable" }, { status: 502 });
+  }
 
   return NextResponse.json(data, { status: nestResponse.status });
 }

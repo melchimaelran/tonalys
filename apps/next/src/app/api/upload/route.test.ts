@@ -77,4 +77,14 @@ describe("POST /api/upload", () => {
 
     expect(response.status).toBe(502);
   });
+
+  it("returns 502 when nest responds with a non-JSON body", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response("not json", { status: 201 }));
+    const formData = new FormData();
+    formData.append("file", new File(["audio"], "track.mp3"));
+
+    const response = await POST(makeRequest(formData, "token=signed-jwt"));
+
+    expect(response.status).toBe(502);
+  });
 });

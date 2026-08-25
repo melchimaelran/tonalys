@@ -90,4 +90,14 @@ describe("POST /api/youtube", () => {
 
     expect(response.status).toBe(502);
   });
+
+  it("returns 502 when nest responds with a non-JSON body", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response("not json", { status: 201 }));
+
+    const response = await POST(
+      makeRequest({ url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }, "token=signed-jwt"),
+    );
+
+    expect(response.status).toBe(502);
+  });
 });

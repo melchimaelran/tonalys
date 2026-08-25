@@ -180,4 +180,26 @@ describe("UploadPage", () => {
       expect(screen.getByText(/analysis service unavailable/i)).toBeInTheDocument(),
     );
   });
+
+  it("shows an error instead of an indefinite loading state when polling fails", async () => {
+    vi.mocked(fetch).mockImplementation((input) => {
+      const url = String(input);
+      if (url === "/api/upload") {
+        return Promise.resolve(
+          new Response(JSON.stringify({ id: "track-1", jobId: "job-1" }), { status: 201 }),
+        );
+      }
+      return Promise.resolve(new Response("not json", { status: 200 }));
+    });
+    renderPage();
+    const file = new File(["audio"], "track.mp3", { type: "audio/mpeg" });
+    fireEvent.change(screen.getByLabelText(/drag and drop an audio file/i), {
+      target: { files: [file] },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /upload/i }));
+
+    await waitFor(() => expect(screen.getByTestId("job-status-error")).toBeInTheDocument());
+    expect(screen.queryByTestId("job-status")).not.toBeInTheDocument();
+  });
 });
