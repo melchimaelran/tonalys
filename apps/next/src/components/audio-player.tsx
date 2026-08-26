@@ -99,9 +99,7 @@ export function AudioPlayer({ src, onTimeUpdate }: AudioPlayerProps) {
     if (!audio) return;
     const time = audio.currentTime;
     setPointB(time);
-    if (pointA !== null && pointA < time) {
-      setLoopEnabled(true);
-    }
+    setLoopEnabled(pointA !== null && pointA < time);
   }
 
   function toggleLoop() {
