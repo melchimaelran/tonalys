@@ -59,4 +59,27 @@ describe("TrackView", () => {
     expect(screen.getByTestId("piano-key-G-1")).toHaveClass("bg-primary");
     expect(screen.getByTestId("piano-key-D-1")).not.toHaveClass("bg-primary");
   });
+
+  it("shows the piano by default and not the guitar diagram", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify([]), { status: 200 }));
+
+    renderTrackView("track-1");
+    await screen.findByText("—");
+
+    expect(screen.getByRole("img", { name: "Piano keyboard" })).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Guitar chord diagram" })).not.toBeInTheDocument();
+  });
+
+  it("switches to the guitar diagram and hides the piano when that tab is selected", async () => {
+    const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "major" }];
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify(chords), { status: 200 }));
+
+    renderTrackView("track-1");
+    await screen.findByText("C major");
+
+    fireEvent.click(screen.getByRole("tab", { name: /guitar/i }));
+
+    expect(screen.getByRole("img", { name: "Guitar chord diagram" })).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Piano keyboard" })).not.toBeInTheDocument();
+  });
 });
