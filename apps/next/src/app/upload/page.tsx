@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnalysisStatus } from "@/components/analysis-status";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { YoutubeLinkForm } from "@/components/youtube-link-form";
 import { useJobStatus } from "@/hooks/use-job-status";
@@ -82,9 +83,16 @@ export default function UploadPage() {
               <p data-testid="job-status-error" className="text-sm text-destructive">
                 Lost track of this job&apos;s status — please refresh
               </p>
+            ) : jobStatus.data ? (
+              <div data-testid="job-status">
+                <AnalysisStatus
+                  status={jobStatus.data.status}
+                  errorMessage={jobStatus.data.errorMessage}
+                />
+              </div>
             ) : (
-              <p data-testid="job-status" className="text-sm">
-                Status: {jobStatus.data?.status ?? "loading"}
+              <p data-testid="job-status" className="text-sm text-muted-foreground">
+                Loading...
               </p>
             )
           ) : (

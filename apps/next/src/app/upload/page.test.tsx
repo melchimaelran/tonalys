@@ -99,7 +99,7 @@ describe("UploadPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /upload/i }));
 
     await waitFor(() =>
-      expect(screen.getByTestId("job-status")).toHaveTextContent("Status: PENDING"),
+      expect(screen.getByTestId("job-status")).toHaveTextContent(/waiting to start/i),
     );
     const [uploadUrl, uploadInit] = vi
       .mocked(fetch)
@@ -155,7 +155,7 @@ describe("UploadPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /analyze/i }));
 
     await waitFor(() =>
-      expect(screen.getByTestId("job-status")).toHaveTextContent("Status: PENDING"),
+      expect(screen.getByTestId("job-status")).toHaveTextContent(/waiting to start/i),
     );
     const [youtubeUrl, youtubeInit] = vi
       .mocked(fetch)
