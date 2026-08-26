@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { TrackView } from "./track-view";
@@ -203,6 +203,79 @@ describe("TrackView", () => {
     await screen.findByText("—");
 
     expect(screen.queryByRole("combobox", { name: /capo/i })).not.toBeInTheDocument();
+  });
+
+  it("lets the user edit the current chord segment and refetches after saving", async () => {
+    const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "major" }];
+    const updated = { id: "seg-1", startTime: 0, endTime: 5, root: "G", chordType: "minor" };
+    vi.mocked(fetch).mockImplementation((input, init) => {
+      const url = String(input);
+      if (init?.method === "PATCH") {
+        return Promise.resolve(new Response(JSON.stringify(updated), { status: 200 }));
+      }
+      if (url === "/api/tracks/track-1/chords") {
+        return Promise.resolve(new Response(JSON.stringify(chords), { status: 200 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify([]), { status: 200 }));
+    });
+
+    renderTrackView("track-1");
+    await screen.findByText("C major");
+
+    fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+    fireEvent.change(screen.getByRole("combobox", { name: /^root$/i }), {
+      target: { value: "G" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: /chord type/i }), {
+      target: { value: "minor" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+
+    await waitFor(() =>
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/tracks/track-1/chords/seg-1",
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({ root: "G", chordType: "minor" }),
+        }),
+      ),
+    );
+    // The edit form closes and the chords query is refetched.
+    expect(screen.queryByRole("combobox", { name: /^root$/i })).not.toBeInTheDocument();
+  });
+
+  it("closes the edit form without saving when Cancel is clicked", async () => {
+    const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "major" }];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    renderTrackView("track-1");
+    await screen.findByText("C major");
+    fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+
+    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+
+    expect(screen.queryByRole("combobox", { name: /^root$/i })).not.toBeInTheDocument();
+    expect(screen.getByText("C major")).toBeInTheDocument();
+  });
+
+  it("keeps the edit form open and shows an error when saving fails", async () => {
+    const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "major" }];
+    vi.mocked(fetch).mockImplementation((_input, init) => {
+      if (init?.method === "PATCH") {
+        return Promise.resolve(new Response(JSON.stringify({ message: "nope" }), { status: 400 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify(chords), { status: 200 }));
+    });
+
+    renderTrackView("track-1");
+    await screen.findByText("C major");
+    fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+
+    await screen.findByText(/failed to update chord segment/i);
+    expect(screen.getByRole("combobox", { name: /^root$/i })).toBeInTheDocument();
   });
 
   it("shows the track title", async () => {

@@ -20,7 +20,11 @@ describe('TracksController', () => {
   let controller: TracksController;
   let prismaService: {
     track: { findUnique: jest.Mock };
-    chordSegment: { findMany: jest.Mock };
+    chordSegment: {
+      findMany: jest.Mock;
+      findFirst: jest.Mock;
+      update: jest.Mock;
+    };
   };
   let storageService: { download: jest.Mock };
   let res: { set: jest.Mock; status: jest.Mock };
@@ -28,7 +32,11 @@ describe('TracksController', () => {
   beforeEach(() => {
     prismaService = {
       track: { findUnique: jest.fn() },
-      chordSegment: { findMany: jest.fn() },
+      chordSegment: {
+        findMany: jest.fn(),
+        findFirst: jest.fn(),
+        update: jest.fn(),
+      },
     };
     storageService = { download: jest.fn() };
     res = { set: jest.fn(), status: jest.fn() };
@@ -231,5 +239,72 @@ describe('TracksController', () => {
     await expect(controller.getChords('unknown')).rejects.toThrow(
       NotFoundException,
     );
+  });
+
+  it('updates the chord segment and marks it as a manual edit', async () => {
+    prismaService.chordSegment.findFirst.mockResolvedValue({
+      id: 'seg-1',
+      trackId: 'track-1',
+    });
+    prismaService.chordSegment.update.mockResolvedValue({
+      id: 'seg-1',
+      startTime: 0,
+      endTime: 2.5,
+      root: 'G',
+      chordType: 'minor',
+    });
+
+    const result = await controller.updateChord('track-1', 'seg-1', {
+      root: 'G',
+      chordType: 'minor',
+    });
+
+    expect(prismaService.chordSegment.findFirst).toHaveBeenCalledWith({
+      where: { id: 'seg-1', trackId: 'track-1' },
+    });
+    expect(prismaService.chordSegment.update).toHaveBeenCalledWith({
+      where: { id: 'seg-1' },
+      data: { root: 'G', chordType: 'minor', isManualEdit: true },
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        root: true,
+        chordType: true,
+      },
+    });
+    expect(result).toEqual({
+      id: 'seg-1',
+      startTime: 0,
+      endTime: 2.5,
+      root: 'G',
+      chordType: 'minor',
+    });
+  });
+
+  it('throws NotFoundException when the segment does not exist', async () => {
+    prismaService.chordSegment.findFirst.mockResolvedValue(null);
+
+    await expect(
+      controller.updateChord('track-1', 'unknown', {
+        root: 'G',
+        chordType: 'minor',
+      }),
+    ).rejects.toThrow(NotFoundException);
+    expect(prismaService.chordSegment.update).not.toHaveBeenCalled();
+  });
+
+  it('throws NotFoundException when the segment does not belong to the track', async () => {
+    // A compound where (id + trackId) means Prisma itself returns null for a
+    // mismatched track — the controller no longer needs a separate check.
+    prismaService.chordSegment.findFirst.mockResolvedValue(null);
+
+    await expect(
+      controller.updateChord('track-1', 'seg-1', {
+        root: 'G',
+        chordType: 'minor',
+      }),
+    ).rejects.toThrow(NotFoundException);
+    expect(prismaService.chordSegment.update).not.toHaveBeenCalled();
   });
 });
