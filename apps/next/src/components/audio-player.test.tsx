@@ -88,6 +88,41 @@ describe("AudioPlayer", () => {
     expect(screen.getByRole("slider", { name: /seek/i })).toHaveAttribute("max", "0");
   });
 
+  it("renders a speed selector defaulting to 1x", () => {
+    render(<AudioPlayer src="/api/tracks/track-1/audio" />);
+
+    expect(screen.getByRole("combobox", { name: /speed/i })).toHaveValue("1");
+  });
+
+  it("sets the audio's playbackRate when the speed is changed", () => {
+    const { container } = render(<AudioPlayer src="/api/tracks/track-1/audio" />);
+    const audio = getAudioElement(container);
+
+    fireEvent.change(screen.getByRole("combobox", { name: /speed/i }), {
+      target: { value: "1.5" },
+    });
+
+    expect(audio.playbackRate).toBe(1.5);
+  });
+
+  it("preserves pitch when the speed changes, including vendor-prefixed browsers", () => {
+    const { container } = render(<AudioPlayer src="/api/tracks/track-1/audio" />);
+    const audio = getAudioElement(container) as HTMLAudioElement & {
+      webkitPreservesPitch?: boolean;
+      mozPreservesPitch?: boolean;
+    };
+
+    expect(audio.preservesPitch).toBe(true);
+    expect(audio.webkitPreservesPitch).toBe(true);
+    expect(audio.mozPreservesPitch).toBe(true);
+
+    fireEvent.change(screen.getByRole("combobox", { name: /speed/i }), {
+      target: { value: "0.5" },
+    });
+
+    expect(audio.preservesPitch).toBe(true);
+  });
+
   it("calls onTimeUpdate with the current playback position", () => {
     const onTimeUpdate = vi.fn();
     const { container } = render(
