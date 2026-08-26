@@ -236,12 +236,66 @@ describe("TrackView", () => {
         "/api/tracks/track-1/chords/seg-1",
         expect.objectContaining({
           method: "PATCH",
-          body: JSON.stringify({ root: "G", chordType: "minor" }),
+          body: JSON.stringify({ root: "G", chordType: "minor", bassNote: null }),
         }),
       ),
     );
     // The edit form closes and the chords query is refetched.
     expect(screen.queryByRole("combobox", { name: /^root$/i })).not.toBeInTheDocument();
+  });
+
+  it("shows slash notation for a chord that has a bass note", async () => {
+    const chords = [
+      { id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "major", bassNote: "F" },
+    ];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    renderTrackView("track-1");
+
+    await screen.findByText("C/F major");
+  });
+
+  it("lets the user turn a chord into a slash chord and sends the bass note", async () => {
+    const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "major" }];
+    const updated = {
+      id: "seg-1",
+      startTime: 0,
+      endTime: 5,
+      root: "C",
+      chordType: "major",
+      bassNote: "F",
+    };
+    vi.mocked(fetch).mockImplementation((input, init) => {
+      const url = String(input);
+      if (init?.method === "PATCH") {
+        return Promise.resolve(new Response(JSON.stringify(updated), { status: 200 }));
+      }
+      if (url === "/api/tracks/track-1/chords") {
+        return Promise.resolve(new Response(JSON.stringify(chords), { status: 200 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify([]), { status: 200 }));
+    });
+
+    renderTrackView("track-1");
+    await screen.findByText("C major");
+
+    fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+    fireEvent.change(screen.getByRole("combobox", { name: /bass note/i }), {
+      target: { value: "F" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+
+    await waitFor(() =>
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/tracks/track-1/chords/seg-1",
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({ root: "C", chordType: "major", bassNote: "F" }),
+        }),
+      ),
+    );
   });
 
   it("closes the edit form without saving when Cancel is clicked", async () => {

@@ -47,7 +47,7 @@ export function TrackView({ trackId }: TrackViewProps) {
   // capo position. Purely a different lookup name; never touches audio.
   const guitarLookupRoot = currentChord ? transposeRoot(currentChord.root, -capo) || currentChord.root : "";
   const guitarShape = currentChord
-    ? getGuitarChordShape(guitarLookupRoot, currentChord.chordType)
+    ? getGuitarChordShape(guitarLookupRoot, currentChord.chordType, currentChord.bassNote)
     : null;
   const displayedChord = currentChord
     ? { ...currentChord, root: view === "guitar" ? guitarLookupRoot : pianoLookupRoot }
@@ -61,10 +61,11 @@ export function TrackView({ trackId }: TrackViewProps) {
           <ChordEditForm
             root={currentChord.root}
             chordType={currentChord.chordType}
+            bassNote={currentChord.bassNote}
             isSaving={updateChordSegment.isPending}
-            onSave={(root, chordType) => {
+            onSave={(root, chordType, bassNote) => {
               updateChordSegment.mutate(
-                { segmentId: currentChord.id, root, chordType },
+                { segmentId: currentChord.id, root, chordType, bassNote },
                 { onSuccess: () => setIsEditing(false) },
               );
             }}

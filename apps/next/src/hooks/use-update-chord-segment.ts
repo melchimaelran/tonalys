@@ -5,16 +5,19 @@ export interface UpdateChordSegmentInput {
   segmentId: string;
   root: string;
   chordType: string;
+  bassNote?: string | null;
 }
 
 async function updateChordSegment(
   trackId: string,
-  { segmentId, root, chordType }: UpdateChordSegmentInput,
+  { segmentId, root, chordType, bassNote }: UpdateChordSegmentInput,
 ): Promise<ChordSegment> {
   const response = await fetch(`/api/tracks/${trackId}/chords/${segmentId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ root, chordType }),
+    body: JSON.stringify(
+      bassNote !== undefined ? { root, chordType, bassNote } : { root, chordType },
+    ),
   });
   if (!response.ok) {
     throw new Error("Failed to update chord segment");

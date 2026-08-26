@@ -31,11 +31,34 @@ const chordsByKey = guitarChords.chords as Record<string, ChordsDbEntry[]>;
 export const GUITAR_STRING_COUNT = guitarChords.main.strings;
 export const GUITAR_FRETS_ON_CHORD = guitarChords.main.fretsOnChord;
 
-export function getGuitarChordShape(root: string, chordType: string): GuitarChordShape | null {
+// chords-db only has dedicated slash-chord shape data for a hand-picked set
+// of major (suffix "/<bass>") and minor (suffix "m/<bass>") combinations per
+// root — not every root/bass pair, and no slash data at all for other chord
+// types. When there's no dedicated shape, we fall back to the plain chord
+// shape (same fretting, the bass note is just a labeling difference).
+function slashSuffix(chordType: string, bassNote: string): string | null {
+  if (chordType === "major") return `/${bassNote}`;
+  if (chordType === "minor") return `m/${bassNote}`;
+  return null;
+}
+
+export function getGuitarChordShape(
+  root: string,
+  chordType: string,
+  bassNote?: string | null,
+): GuitarChordShape | null {
   const key = ROOT_ALIASES[root] ?? root;
   const entries = chordsByKey[key];
   if (!entries) {
     return null;
+  }
+
+  if (bassNote && bassNote !== root) {
+    const suffix = slashSuffix(chordType, bassNote);
+    const slashMatch = suffix ? entries.find((entry) => entry.suffix === suffix) : undefined;
+    if (slashMatch) {
+      return slashMatch.positions[0] ?? null;
+    }
   }
 
   const match = entries.find((entry) => entry.suffix === chordType);

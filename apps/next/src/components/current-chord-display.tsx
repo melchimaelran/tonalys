@@ -5,9 +5,14 @@ export interface CurrentChordDisplayProps {
 }
 
 export function CurrentChordDisplay({ chord }: CurrentChordDisplayProps) {
+  const root =
+    chord?.bassNote && chord.bassNote !== chord.root
+      ? `${chord.root}/${chord.bassNote}`
+      : chord?.root;
+
   return (
     <p role="status" aria-live="polite" className="text-2xl font-semibold">
-      {chord ? `${chord.root} ${chord.chordType}` : "—"}
+      {chord ? `${root} ${chord.chordType}` : "—"}
     </p>
   );
 }

@@ -41,4 +41,51 @@ describe("getChordNotes", () => {
   it("returns no notes for an unrecognized root", () => {
     expect(getChordNotes("H", "major")).toEqual([]);
   });
+
+  it("returns the dominant 7th tones", () => {
+    expect(getChordNotes("C", "7")).toEqual([
+      { note: "C", octave: 1 },
+      { note: "E", octave: 1 },
+      { note: "G", octave: 1 },
+      { note: "A#", octave: 1 },
+    ]);
+  });
+
+  it("returns the major 7th tones", () => {
+    expect(getChordNotes("C", "maj7")).toEqual([
+      { note: "C", octave: 1 },
+      { note: "E", octave: 1 },
+      { note: "G", octave: 1 },
+      { note: "B", octave: 1 },
+    ]);
+  });
+
+  it("returns the sus4 tones", () => {
+    expect(getChordNotes("C", "sus4")).toEqual([
+      { note: "C", octave: 1 },
+      { note: "F", octave: 1 },
+      { note: "G", octave: 1 },
+    ]);
+  });
+
+  it("returns the augmented triad", () => {
+    expect(getChordNotes("C", "aug")).toEqual([
+      { note: "C", octave: 1 },
+      { note: "E", octave: 1 },
+      { note: "G#", octave: 1 },
+    ]);
+  });
+
+  it("returns the diminished 7th tones", () => {
+    expect(getChordNotes("C", "dim7")).toEqual([
+      { note: "C", octave: 1 },
+      { note: "D#", octave: 1 },
+      { note: "F#", octave: 1 },
+      { note: "A", octave: 1 },
+    ]);
+  });
+
+  it("returns no notes for a 9th chord (extends beyond the 2-octave keyboard)", () => {
+    expect(getChordNotes("C", "9")).toEqual([]);
+  });
 });
