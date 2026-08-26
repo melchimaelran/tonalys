@@ -63,6 +63,10 @@ export function AudioPlayer({ src, onTimeUpdate }: AudioPlayerProps) {
     const audio = audioRef.current;
     if (!audio) return;
     audio.playbackRate = Number(event.target.value);
+    // Re-assert defensively — not proven necessary on any current engine,
+    // but this API's cross-browser behavior around playbackRate changes is
+    // exactly the kind of thing CLAUDE.md flags as needing real-device
+    // verification, and the call is free.
     setPreservesPitch(audio);
   }
 
@@ -107,7 +111,7 @@ export function AudioPlayer({ src, onTimeUpdate }: AudioPlayerProps) {
         className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground shadow-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
       >
         {PLAYBACK_SPEEDS.map((speed) => (
-          <option key={speed} value={speed} className="bg-background text-foreground">
+          <option key={speed} value={speed}>
             {speed}x
           </option>
         ))}
