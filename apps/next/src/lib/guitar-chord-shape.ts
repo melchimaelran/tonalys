@@ -1,9 +1,15 @@
 import guitarChords from "@tombatossals/chords-db/lib/guitar.json";
 
-// chords-db spells accidentals as flats for these roots (matches standard
-// guitar chord chart convention) — Essentia/our pipeline always emits sharps.
+// chords-db's `chords` object doesn't key sharps the way its `keys` display
+// list suggests: D#/G#/A# are stored under their flat spelling (Eb/Ab/Bb,
+// matching standard guitar chord chart convention), while C#/F# are stored
+// under the literal strings "Csharp"/"Fsharp" (no "#" in the actual key).
+// Essentia/our pipeline always emits sharps, so every one of the five
+// possible sharp roots needs an alias here.
 const ROOT_ALIASES: Record<string, string> = {
+  "C#": "Csharp",
   "D#": "Eb",
+  "F#": "Fsharp",
   "G#": "Ab",
   "A#": "Bb",
 };

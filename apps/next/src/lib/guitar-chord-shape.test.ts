@@ -27,6 +27,14 @@ describe("getGuitarChordShape", () => {
     expect(shape).not.toBeNull();
   });
 
+  it.each(["C#", "F#"])(
+    "finds a shape for %s (chords-db keys these as 'Csharp'/'Fsharp')",
+    (root) => {
+      expect(getGuitarChordShape(root, "major")).not.toBeNull();
+      expect(getGuitarChordShape(root, "minor")).not.toBeNull();
+    },
+  );
+
   it("returns null for an unrecognized root", () => {
     expect(getGuitarChordShape("H", "major")).toBeNull();
   });
