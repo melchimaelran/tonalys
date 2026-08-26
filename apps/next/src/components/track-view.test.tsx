@@ -93,6 +93,62 @@ describe("TrackView", () => {
     expect(screen.queryByRole("img", { name: "Piano keyboard" })).not.toBeInTheDocument();
   });
 
+  it("recomputes the displayed chord name and shape when the capo changes, without touching audio", async () => {
+    const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "D", chordType: "major" }];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    const { container } = renderTrackView("track-1");
+    await screen.findByText("D major");
+    fireEvent.click(screen.getByRole("tab", { name: /guitar/i }));
+
+    expect(screen.getByText("D major")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("combobox", { name: /capo/i }), {
+      target: { value: "2" },
+    });
+
+    expect(screen.getByText("C major")).toBeInTheDocument();
+    expect(screen.queryByText("D major")).not.toBeInTheDocument();
+    // Capo is purely visual — it must never touch the audio element itself.
+    expect(container.querySelector("audio")).toHaveAttribute(
+      "src",
+      "/api/tracks/track-1/audio",
+    );
+  });
+
+  it("shows the real chord name again (not capo-transposed) when switching back to piano", async () => {
+    const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "D", chordType: "major" }];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    renderTrackView("track-1");
+    await screen.findByText("D major");
+    fireEvent.click(screen.getByRole("tab", { name: /guitar/i }));
+    fireEvent.change(screen.getByRole("combobox", { name: /capo/i }), {
+      target: { value: "2" },
+    });
+    expect(screen.getByText("C major")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: /piano/i }));
+
+    expect(screen.getByText("D major")).toBeInTheDocument();
+    expect(screen.queryByText("C major")).not.toBeInTheDocument();
+  });
+
+  it("does not show the capo selector on the piano view", async () => {
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify([]), { status: 200 })),
+    );
+
+    renderTrackView("track-1");
+    await screen.findByText("—");
+
+    expect(screen.queryByRole("combobox", { name: /capo/i })).not.toBeInTheDocument();
+  });
+
   it("shows the track title", async () => {
     vi.mocked(fetch).mockImplementation((input) => {
       const url = String(input);

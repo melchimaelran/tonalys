@@ -1,34 +1,9 @@
-const CHROMATIC_SCALE = [
-  "C",
-  "C#",
-  "D",
-  "D#",
-  "E",
-  "F",
-  "F#",
-  "G",
-  "G#",
-  "A",
-  "A#",
-  "B",
-];
-
-const FLAT_ALIASES: Record<string, string> = {
-  Db: "C#",
-  Eb: "D#",
-  Gb: "F#",
-  Ab: "G#",
-  Bb: "A#",
-};
+import { CHROMATIC_SCALE, noteIndex } from "@/lib/notes";
 
 const TRIAD_INTERVALS: Record<string, number[]> = {
   major: [0, 4, 7],
   minor: [0, 3, 7],
 };
-
-function noteIndex(note: string): number {
-  return CHROMATIC_SCALE.indexOf(FLAT_ALIASES[note] ?? note);
-}
 
 export interface VoicedNote {
   note: string;
