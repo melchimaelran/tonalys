@@ -42,6 +42,26 @@ describe("GET /api/tracks/[id]/audio", () => {
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]));
   });
 
+  it("forwards a Range header from the browser and passes through a 206 response", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(new Uint8Array([4, 5]), {
+        status: 206,
+        headers: { "Content-Type": "audio/mpeg", "Content-Range": "bytes 2-3/10" },
+      }),
+    );
+    const request = new NextRequest(new URL("/api/tracks/track-1/audio", "http://localhost"), {
+      headers: { cookie: "token=signed-jwt", range: "bytes=2-3" },
+    });
+
+    const response = await GET(request, makeContext("track-1"));
+
+    expect(fetch).toHaveBeenCalledWith("http://nest-test:3001/tracks/track-1/audio", {
+      headers: { Authorization: "Bearer signed-jwt", Range: "bytes=2-3" },
+    });
+    expect(response.status).toBe(206);
+    expect(response.headers.get("Content-Range")).toBe("bytes 2-3/10");
+  });
+
   it("returns 404 when nest reports the track doesn't exist", async () => {
     vi.mocked(fetch).mockResolvedValue(
       new Response(JSON.stringify({ message: "Track not found" }), { status: 404 }),

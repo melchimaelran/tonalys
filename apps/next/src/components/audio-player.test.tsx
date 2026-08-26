@@ -77,4 +77,27 @@ describe("AudioPlayer", () => {
 
     expect(screen.getByRole("slider", { name: /seek/i })).toHaveValue("30");
   });
+
+  it("ignores a non-finite duration instead of setting an invalid slider max", () => {
+    const { container } = render(<AudioPlayer src="/api/tracks/track-1/audio" />);
+    const audio = getAudioElement(container);
+    Object.defineProperty(audio, "duration", { value: Infinity, configurable: true });
+
+    fireEvent.loadedMetadata(audio);
+
+    expect(screen.getByRole("slider", { name: /seek/i })).toHaveAttribute("max", "0");
+  });
+
+  it("calls onTimeUpdate with the current playback position", () => {
+    const onTimeUpdate = vi.fn();
+    const { container } = render(
+      <AudioPlayer src="/api/tracks/track-1/audio" onTimeUpdate={onTimeUpdate} />,
+    );
+    const audio = getAudioElement(container);
+    Object.defineProperty(audio, "currentTime", { value: 12.5, configurable: true });
+
+    fireEvent.timeUpdate(audio);
+
+    expect(onTimeUpdate).toHaveBeenCalledWith(12.5);
+  });
 });

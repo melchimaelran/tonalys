@@ -11,25 +11,21 @@ export async function GET(
 
   const { id } = await params;
 
-  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
-  const range = request.headers.get("range");
-  if (range) {
-    headers.Range = range;
-  }
-
   let nestResponse: Response;
   try {
-    nestResponse = await fetch(`${process.env.NEST_API_URL}/tracks/${id}/audio`, {
-      headers,
+    nestResponse = await fetch(`${process.env.NEST_API_URL}/tracks/${id}/chords`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
   } catch {
     return NextResponse.json({ message: "Analysis service unavailable" }, { status: 502 });
   }
 
-  const body = await nestResponse.arrayBuffer();
+  let data: unknown;
+  try {
+    data = await nestResponse.json();
+  } catch {
+    return NextResponse.json({ message: "Analysis service unavailable" }, { status: 502 });
+  }
 
-  return new NextResponse(body, {
-    status: nestResponse.status,
-    headers: nestResponse.headers,
-  });
+  return NextResponse.json(data, { status: nestResponse.status });
 }

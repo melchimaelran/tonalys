@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream';
 import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { StorageService } from './storage.service';
@@ -65,13 +66,13 @@ describe('StorageService', () => {
     expect(client.removeObject).toHaveBeenCalledWith('tracks', 'abc.mp3');
   });
 
-  it('returns the object stream for a key', async () => {
-    const stream = { pipe: jest.fn() };
+  it('returns the object contents as a buffer', async () => {
+    const stream = Readable.from([Buffer.from('hello '), Buffer.from('world')]);
     client.getObject.mockResolvedValue(stream);
 
     const result = await service.download('abc.mp3');
 
     expect(client.getObject).toHaveBeenCalledWith('tracks', 'abc.mp3');
-    expect(result).toBe(stream);
+    expect(result).toEqual(Buffer.from('hello world'));
   });
 });

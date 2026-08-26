@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 
 export interface AudioPlayerProps {
   src: string;
+  onTimeUpdate?: (currentTime: number) => void;
 }
 
-export function AudioPlayer({ src }: AudioPlayerProps) {
+export function AudioPlayer({ src, onTimeUpdate }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -30,11 +31,14 @@ export function AudioPlayer({ src }: AudioPlayerProps) {
   }
 
   function handleTimeUpdate(event: SyntheticEvent<HTMLAudioElement>) {
-    setCurrentTime(event.currentTarget.currentTime);
+    const time = event.currentTarget.currentTime;
+    setCurrentTime(time);
+    onTimeUpdate?.(time);
   }
 
   function handleLoadedMetadata(event: SyntheticEvent<HTMLAudioElement>) {
-    setDuration(event.currentTarget.duration);
+    const { duration: nextDuration } = event.currentTarget;
+    setDuration(Number.isFinite(nextDuration) ? nextDuration : 0);
   }
 
   return (

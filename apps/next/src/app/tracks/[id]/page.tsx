@@ -1,4 +1,4 @@
-import { AudioPlayer } from "@/components/audio-player";
+import { TrackView } from "@/components/track-view";
 
 export default async function TrackPage({
   params,
@@ -9,7 +9,7 @@ export default async function TrackPage({
 
   return (
     <div className="flex flex-1 items-center justify-center bg-background p-4">
-      <AudioPlayer src={`/api/tracks/${id}/audio`} />
+      <TrackView trackId={id} />
     </div>
   );
 }

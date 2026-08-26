@@ -1,38 +1,62 @@
 import { NotFoundException, StreamableFile } from '@nestjs/common';
+import type { Readable } from 'node:stream';
 import { TracksController } from './tracks.controller';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 
+async function streamToBuffer(stream: Readable): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(chunk as Buffer);
+  }
+  return Buffer.concat(chunks);
+}
+
 describe('TracksController', () => {
   let controller: TracksController;
-  let prismaService: { track: { findUnique: jest.Mock } };
+  let prismaService: {
+    track: { findUnique: jest.Mock };
+    chordSegment: { findMany: jest.Mock };
+  };
   let storageService: { download: jest.Mock };
+  let res: { set: jest.Mock; status: jest.Mock };
 
   beforeEach(() => {
-    prismaService = { track: { findUnique: jest.fn() } };
+    prismaService = {
+      track: { findUnique: jest.fn() },
+      chordSegment: { findMany: jest.fn() },
+    };
     storageService = { download: jest.fn() };
+    res = { set: jest.fn(), status: jest.fn() };
     controller = new TracksController(
       prismaService as unknown as PrismaService,
       storageService as unknown as StorageService,
     );
   });
 
-  it('streams the audio file with an mp3 content type', async () => {
+  it('streams the whole audio file with an mp3 content type when no Range is given', async () => {
     prismaService.track.findUnique.mockResolvedValue({
       id: 'track-1',
       audioFileKey: 'abc.mp3',
     });
-    const stream = { pipe: jest.fn() };
-    storageService.download.mockResolvedValue(stream);
+    const buffer = Buffer.from('audio-bytes');
+    storageService.download.mockResolvedValue(buffer);
 
-    const result = await controller.streamAudio('track-1');
+    const result = await controller.streamAudio(
+      'track-1',
+      undefined,
+      res as never,
+    );
 
     expect(prismaService.track.findUnique).toHaveBeenCalledWith({
       where: { id: 'track-1' },
     });
     expect(storageService.download).toHaveBeenCalledWith('abc.mp3');
+    expect(res.set).toHaveBeenCalledWith('Accept-Ranges', 'bytes');
+    expect(res.status).not.toHaveBeenCalled();
     expect(result).toBeInstanceOf(StreamableFile);
     expect(result.options.type).toBe('audio/mpeg');
+    expect(result.options.length).toBe(buffer.length);
   });
 
   it('streams the audio file with a wav content type', async () => {
@@ -40,17 +64,100 @@ describe('TracksController', () => {
       id: 'track-1',
       audioFileKey: 'abc.wav',
     });
-    storageService.download.mockResolvedValue({ pipe: jest.fn() });
+    storageService.download.mockResolvedValue(Buffer.from('audio-bytes'));
 
-    const result = await controller.streamAudio('track-1');
+    const result = await controller.streamAudio(
+      'track-1',
+      undefined,
+      res as never,
+    );
 
     expect(result.options.type).toBe('audio/wav');
+  });
+
+  it('returns a 206 partial response for a byte range', async () => {
+    prismaService.track.findUnique.mockResolvedValue({
+      id: 'track-1',
+      audioFileKey: 'abc.mp3',
+    });
+    const buffer = Buffer.from('0123456789');
+    storageService.download.mockResolvedValue(buffer);
+
+    const result = await controller.streamAudio(
+      'track-1',
+      'bytes=2-5',
+      res as never,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(206);
+    expect(res.set).toHaveBeenCalledWith('Accept-Ranges', 'bytes');
+    expect(res.set).toHaveBeenCalledWith('Content-Range', 'bytes 2-5/10');
+    expect(result.options.length).toBe(4);
+    const chunk = await streamToBuffer(result.getStream());
+    expect(chunk.toString()).toBe('2345');
+  });
+
+  it('returns a 206 partial response for an open-ended byte range', async () => {
+    prismaService.track.findUnique.mockResolvedValue({
+      id: 'track-1',
+      audioFileKey: 'abc.mp3',
+    });
+    const buffer = Buffer.from('0123456789');
+    storageService.download.mockResolvedValue(buffer);
+
+    const result = await controller.streamAudio(
+      'track-1',
+      'bytes=7-',
+      res as never,
+    );
+
+    expect(res.set).toHaveBeenCalledWith('Content-Range', 'bytes 7-9/10');
+    const chunk = await streamToBuffer(result.getStream());
+    expect(chunk.toString()).toBe('789');
   });
 
   it('throws NotFoundException when the track does not exist', async () => {
     prismaService.track.findUnique.mockResolvedValue(null);
 
-    await expect(controller.streamAudio('unknown')).rejects.toThrow(
+    await expect(
+      controller.streamAudio('unknown', undefined, res as never),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('returns the chord segments for a track, ordered by start time', async () => {
+    prismaService.track.findUnique.mockResolvedValue({ id: 'track-1' });
+    prismaService.chordSegment.findMany.mockResolvedValue([
+      {
+        id: 'seg-1',
+        startTime: 0,
+        endTime: 2.5,
+        root: 'C',
+        chordType: 'maj',
+      },
+    ]);
+
+    const result = await controller.getChords('track-1');
+
+    expect(prismaService.chordSegment.findMany).toHaveBeenCalledWith({
+      where: { trackId: 'track-1' },
+      orderBy: { startTime: 'asc' },
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        root: true,
+        chordType: true,
+      },
+    });
+    expect(result).toEqual([
+      { id: 'seg-1', startTime: 0, endTime: 2.5, root: 'C', chordType: 'maj' },
+    ]);
+  });
+
+  it('throws NotFoundException for chords when the track does not exist', async () => {
+    prismaService.track.findUnique.mockResolvedValue(null);
+
+    await expect(controller.getChords('unknown')).rejects.toThrow(
       NotFoundException,
     );
   });
