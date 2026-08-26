@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Client } from 'minio';
+import type { Readable } from 'node:stream';
 import { MINIO_CLIENT } from './minio-client.provider';
 
 @Injectable()
@@ -26,5 +27,10 @@ export class StorageService {
   async remove(key: string): Promise<void> {
     const bucket = this.configService.get<string>('MINIO_BUCKET')!;
     await this.client.removeObject(bucket, key);
+  }
+
+  async download(key: string): Promise<Readable> {
+    const bucket = this.configService.get<string>('MINIO_BUCKET')!;
+    return this.client.getObject(bucket, key);
   }
 }

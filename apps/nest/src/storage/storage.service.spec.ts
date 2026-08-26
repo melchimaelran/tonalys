@@ -10,6 +10,7 @@ describe('StorageService', () => {
     makeBucket: jest.Mock;
     putObject: jest.Mock;
     removeObject: jest.Mock;
+    getObject: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -18,6 +19,7 @@ describe('StorageService', () => {
       makeBucket: jest.fn(),
       putObject: jest.fn(),
       removeObject: jest.fn(),
+      getObject: jest.fn(),
     };
 
     const module = await Test.createTestingModule({
@@ -61,5 +63,15 @@ describe('StorageService', () => {
     await service.remove('abc.mp3');
 
     expect(client.removeObject).toHaveBeenCalledWith('tracks', 'abc.mp3');
+  });
+
+  it('returns the object stream for a key', async () => {
+    const stream = { pipe: jest.fn() };
+    client.getObject.mockResolvedValue(stream);
+
+    const result = await service.download('abc.mp3');
+
+    expect(client.getObject).toHaveBeenCalledWith('tracks', 'abc.mp3');
+    expect(result).toBe(stream);
   });
 });

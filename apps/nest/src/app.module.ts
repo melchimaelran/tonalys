@@ -8,6 +8,7 @@ import { UploadModule } from './upload/upload.module';
 import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
 import { YoutubeModule } from './youtube/youtube.module';
 import { JobsModule } from './jobs/jobs.module';
+import { TracksModule } from './tracks/tracks.module';
 import { validateEnv } from './config/env.validation';
 
 @Module({
@@ -23,6 +24,7 @@ import { validateEnv } from './config/env.validation';
     RabbitMQModule,
     YoutubeModule,
     JobsModule,
+    TracksModule,
   ],
   controllers: [AppController],
   providers: [AppService],
