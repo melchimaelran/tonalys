@@ -1,0 +1,43 @@
+import { describe, it, expect } from "vitest";
+import { getGuitarChordShape } from "./guitar-chord-shape";
+
+describe("getGuitarChordShape", () => {
+  it("returns the standard open shape for a major chord", () => {
+    const shape = getGuitarChordShape("C", "major");
+
+    expect(shape).toMatchObject({
+      frets: [-1, 3, 2, 0, 1, 0],
+      fingers: [0, 3, 2, 0, 1, 0],
+      baseFret: 1,
+      barres: [],
+    });
+  });
+
+  it("returns a shape for a minor chord", () => {
+    const shape = getGuitarChordShape("A", "minor");
+
+    expect(shape).not.toBeNull();
+    expect(shape?.frets).toHaveLength(6);
+  });
+
+  it("normalizes a sharp root to the db's flat spelling", () => {
+    // D# has no "D#" entry in chords-db — only "Eb".
+    const shape = getGuitarChordShape("D#", "major");
+
+    expect(shape).not.toBeNull();
+  });
+
+  it("returns null for an unrecognized root", () => {
+    expect(getGuitarChordShape("H", "major")).toBeNull();
+  });
+
+  it("returns null for chordType 'none'", () => {
+    expect(getGuitarChordShape("N", "none")).toBeNull();
+  });
+
+  it.each(["7", "sus4", "dim", "aug"])("finds a shape for the %s suffix", (chordType) => {
+    const shape = getGuitarChordShape("C", chordType);
+
+    expect(shape).not.toBeNull();
+  });
+});
