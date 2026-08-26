@@ -4,6 +4,7 @@ export interface ChordSegment {
   endTime: number;
   root: string;
   chordType: string;
+  bassNote?: string | null;
 }
 
 export function findChordAtTime(

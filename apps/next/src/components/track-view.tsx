@@ -39,6 +39,9 @@ export function TrackView({ trackId }: TrackViewProps) {
   const pianoLookupRoot = currentChord
     ? transposeRoot(currentChord.root, transpose) || currentChord.root
     : "";
+  const pianoLookupBassNote = currentChord?.bassNote
+    ? transposeRoot(currentChord.bassNote, transpose) || currentChord.bassNote
+    : currentChord?.bassNote;
   const highlightedNotes = currentChord
     ? getChordNotes(pianoLookupRoot, currentChord.chordType)
     : [];
@@ -46,11 +49,18 @@ export function TrackView({ trackId }: TrackViewProps) {
   // so to sound the actual chord, look up the shape transposed DOWN by the
   // capo position. Purely a different lookup name; never touches audio.
   const guitarLookupRoot = currentChord ? transposeRoot(currentChord.root, -capo) || currentChord.root : "";
+  const guitarLookupBassNote = currentChord?.bassNote
+    ? transposeRoot(currentChord.bassNote, -capo) || currentChord.bassNote
+    : currentChord?.bassNote;
   const guitarShape = currentChord
-    ? getGuitarChordShape(guitarLookupRoot, currentChord.chordType)
+    ? getGuitarChordShape(guitarLookupRoot, currentChord.chordType, guitarLookupBassNote)
     : null;
   const displayedChord = currentChord
-    ? { ...currentChord, root: view === "guitar" ? guitarLookupRoot : pianoLookupRoot }
+    ? {
+        ...currentChord,
+        root: view === "guitar" ? guitarLookupRoot : pianoLookupRoot,
+        bassNote: view === "guitar" ? guitarLookupBassNote : pianoLookupBassNote,
+      }
     : currentChord;
 
   return (
@@ -61,10 +71,11 @@ export function TrackView({ trackId }: TrackViewProps) {
           <ChordEditForm
             root={currentChord.root}
             chordType={currentChord.chordType}
+            bassNote={currentChord.bassNote}
             isSaving={updateChordSegment.isPending}
-            onSave={(root, chordType) => {
+            onSave={(root, chordType, bassNote) => {
               updateChordSegment.mutate(
-                { segmentId: currentChord.id, root, chordType },
+                { segmentId: currentChord.id, root, chordType, bassNote },
                 { onSuccess: () => setIsEditing(false) },
               );
             }}

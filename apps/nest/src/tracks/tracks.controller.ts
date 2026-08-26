@@ -107,6 +107,7 @@ export class TracksController {
         endTime: true,
         root: true,
         chordType: true,
+        bassNote: true,
       },
     });
   }
@@ -127,13 +128,19 @@ export class TracksController {
 
     return this.prismaService.chordSegment.update({
       where: { id: segmentId },
-      data: { root: dto.root, chordType: dto.chordType, isManualEdit: true },
+      data: {
+        root: dto.root,
+        chordType: dto.chordType,
+        bassNote: dto.bassNote ?? null,
+        isManualEdit: true,
+      },
       select: {
         id: true,
         startTime: true,
         endTime: true,
         root: true,
         chordType: true,
+        bassNote: true,
       },
     });
   }

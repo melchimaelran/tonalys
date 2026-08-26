@@ -48,4 +48,33 @@ describe("getGuitarChordShape", () => {
 
     expect(shape).not.toBeNull();
   });
+
+  it("returns the dedicated slash-chord shape for C/F when chords-db has one", () => {
+    const plain = getGuitarChordShape("C", "major");
+    const slash = getGuitarChordShape("C", "major", "F");
+
+    expect(slash).not.toBeNull();
+    expect(slash).not.toEqual(plain);
+  });
+
+  it("returns the dedicated slash-chord shape for D/C", () => {
+    const slash = getGuitarChordShape("D", "major", "C");
+
+    expect(slash).not.toBeNull();
+  });
+
+  it("falls back to the plain chord shape when chords-db has no shape for that slash chord", () => {
+    // Bb has no slash suffixes at all in chords-db.
+    const plain = getGuitarChordShape("Bb", "major");
+    const slash = getGuitarChordShape("Bb", "major", "F");
+
+    expect(slash).toEqual(plain);
+  });
+
+  it("returns the plain chord shape when the bass note equals the root", () => {
+    const plain = getGuitarChordShape("C", "major");
+    const withBass = getGuitarChordShape("C", "major", "C");
+
+    expect(withBass).toEqual(plain);
+  });
 });

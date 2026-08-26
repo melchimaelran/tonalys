@@ -23,4 +23,16 @@ describe("CurrentChordDisplay", () => {
 
     expect(screen.getByText("—")).toBeInTheDocument();
   });
+
+  it("shows slash notation for a chord with a bass note", () => {
+    render(<CurrentChordDisplay chord={{ ...chord, bassNote: "F" }} />);
+
+    expect(screen.getByText("C/F major")).toBeInTheDocument();
+  });
+
+  it("doesn't show slash notation when the bass note equals the root", () => {
+    render(<CurrentChordDisplay chord={{ ...chord, bassNote: "C" }} />);
+
+    expect(screen.getByText("C major")).toBeInTheDocument();
+  });
 });

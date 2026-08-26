@@ -226,6 +226,7 @@ describe('TracksController', () => {
         endTime: true,
         root: true,
         chordType: true,
+        bassNote: true,
       },
     });
     expect(result).toEqual([
@@ -264,13 +265,19 @@ describe('TracksController', () => {
     });
     expect(prismaService.chordSegment.update).toHaveBeenCalledWith({
       where: { id: 'seg-1' },
-      data: { root: 'G', chordType: 'minor', isManualEdit: true },
+      data: {
+        root: 'G',
+        chordType: 'minor',
+        bassNote: null,
+        isManualEdit: true,
+      },
       select: {
         id: true,
         startTime: true,
         endTime: true,
         root: true,
         chordType: true,
+        bassNote: true,
       },
     });
     expect(result).toEqual({
@@ -280,6 +287,70 @@ describe('TracksController', () => {
       root: 'G',
       chordType: 'minor',
     });
+  });
+
+  it('sets the bass note for a slash chord edit', async () => {
+    prismaService.chordSegment.findFirst.mockResolvedValue({
+      id: 'seg-1',
+      trackId: 'track-1',
+    });
+    prismaService.chordSegment.update.mockResolvedValue({
+      id: 'seg-1',
+      startTime: 0,
+      endTime: 2.5,
+      root: 'C',
+      chordType: 'major',
+      bassNote: 'F',
+    });
+
+    await controller.updateChord('track-1', 'seg-1', {
+      root: 'C',
+      chordType: 'major',
+      bassNote: 'F',
+    });
+
+    expect(prismaService.chordSegment.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          root: 'C',
+          chordType: 'major',
+          bassNote: 'F',
+          isManualEdit: true,
+        },
+      }),
+    );
+  });
+
+  it('clears the bass note when editing a slash chord back to a plain chord', async () => {
+    prismaService.chordSegment.findFirst.mockResolvedValue({
+      id: 'seg-1',
+      trackId: 'track-1',
+    });
+    prismaService.chordSegment.update.mockResolvedValue({
+      id: 'seg-1',
+      startTime: 0,
+      endTime: 2.5,
+      root: 'C',
+      chordType: 'major',
+      bassNote: null,
+    });
+
+    await controller.updateChord('track-1', 'seg-1', {
+      root: 'C',
+      chordType: 'major',
+      bassNote: null,
+    });
+
+    expect(prismaService.chordSegment.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          root: 'C',
+          chordType: 'major',
+          bassNote: null,
+          isManualEdit: true,
+        },
+      }),
+    );
   });
 
   it('throws NotFoundException when the segment does not exist', async () => {

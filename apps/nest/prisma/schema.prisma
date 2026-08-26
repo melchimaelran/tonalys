@@ -57,6 +57,7 @@ model ChordSegment {
   endTime      Float   @map("end_time")
   root         String
   chordType    String  @map("chord_type")
+  bassNote     String? @map("bass_note")
   isManualEdit Boolean @default(false) @map("is_manual_edit")
 
   @@map("chord_segments")
