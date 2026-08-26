@@ -22,7 +22,7 @@ describe('TracksController', () => {
     track: { findUnique: jest.Mock };
     chordSegment: {
       findMany: jest.Mock;
-      findUnique: jest.Mock;
+      findFirst: jest.Mock;
       update: jest.Mock;
     };
   };
@@ -34,7 +34,7 @@ describe('TracksController', () => {
       track: { findUnique: jest.fn() },
       chordSegment: {
         findMany: jest.fn(),
-        findUnique: jest.fn(),
+        findFirst: jest.fn(),
         update: jest.fn(),
       },
     };
@@ -242,7 +242,7 @@ describe('TracksController', () => {
   });
 
   it('updates the chord segment and marks it as a manual edit', async () => {
-    prismaService.chordSegment.findUnique.mockResolvedValue({
+    prismaService.chordSegment.findFirst.mockResolvedValue({
       id: 'seg-1',
       trackId: 'track-1',
     });
@@ -259,8 +259,8 @@ describe('TracksController', () => {
       chordType: 'minor',
     });
 
-    expect(prismaService.chordSegment.findUnique).toHaveBeenCalledWith({
-      where: { id: 'seg-1' },
+    expect(prismaService.chordSegment.findFirst).toHaveBeenCalledWith({
+      where: { id: 'seg-1', trackId: 'track-1' },
     });
     expect(prismaService.chordSegment.update).toHaveBeenCalledWith({
       where: { id: 'seg-1' },
@@ -283,7 +283,7 @@ describe('TracksController', () => {
   });
 
   it('throws NotFoundException when the segment does not exist', async () => {
-    prismaService.chordSegment.findUnique.mockResolvedValue(null);
+    prismaService.chordSegment.findFirst.mockResolvedValue(null);
 
     await expect(
       controller.updateChord('track-1', 'unknown', {
@@ -295,10 +295,9 @@ describe('TracksController', () => {
   });
 
   it('throws NotFoundException when the segment does not belong to the track', async () => {
-    prismaService.chordSegment.findUnique.mockResolvedValue({
-      id: 'seg-1',
-      trackId: 'other-track',
-    });
+    // A compound where (id + trackId) means Prisma itself returns null for a
+    // mismatched track — the controller no longer needs a separate check.
+    prismaService.chordSegment.findFirst.mockResolvedValue(null);
 
     await expect(
       controller.updateChord('track-1', 'seg-1', {

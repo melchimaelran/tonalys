@@ -57,15 +57,22 @@ export function TrackView({ trackId }: TrackViewProps) {
     <div className="flex w-full max-w-2xl flex-col items-center gap-6">
       {track.data && <h1 className="text-lg font-semibold">{track.data.title}</h1>}
       {isEditing && currentChord ? (
-        <ChordEditForm
-          root={currentChord.root}
-          chordType={currentChord.chordType}
-          onSave={(root, chordType) => {
-            updateChordSegment.mutate({ segmentId: currentChord.id, root, chordType });
-            setIsEditing(false);
-          }}
-          onCancel={() => setIsEditing(false)}
-        />
+        <div className="flex flex-col items-center gap-1">
+          <ChordEditForm
+            root={currentChord.root}
+            chordType={currentChord.chordType}
+            onSave={(root, chordType) => {
+              updateChordSegment.mutate(
+                { segmentId: currentChord.id, root, chordType },
+                { onSuccess: () => setIsEditing(false) },
+              );
+            }}
+            onCancel={() => setIsEditing(false)}
+          />
+          {updateChordSegment.isError && (
+            <p className="text-xs text-destructive">{updateChordSegment.error.message}</p>
+          )}
+        </div>
       ) : (
         <div className="flex items-center gap-2">
           <CurrentChordDisplay chord={displayedChord} />

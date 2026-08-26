@@ -117,11 +117,11 @@ export class TracksController {
     @Param('segmentId') segmentId: string,
     @Body() dto: UpdateChordSegmentDto,
   ) {
-    const segment = await this.prismaService.chordSegment.findUnique({
-      where: { id: segmentId },
+    const segment = await this.prismaService.chordSegment.findFirst({
+      where: { id: segmentId, trackId: id },
     });
 
-    if (!segment || segment.trackId !== id) {
+    if (!segment) {
       throw new NotFoundException('Chord segment not found');
     }
 

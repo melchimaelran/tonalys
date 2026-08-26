@@ -260,6 +260,24 @@ describe("TrackView", () => {
     expect(screen.getByText("C major")).toBeInTheDocument();
   });
 
+  it("keeps the edit form open and shows an error when saving fails", async () => {
+    const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "major" }];
+    vi.mocked(fetch).mockImplementation((_input, init) => {
+      if (init?.method === "PATCH") {
+        return Promise.resolve(new Response(JSON.stringify({ message: "nope" }), { status: 400 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify(chords), { status: 200 }));
+    });
+
+    renderTrackView("track-1");
+    await screen.findByText("C major");
+    fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+
+    await screen.findByText(/failed to update chord segment/i);
+    expect(screen.getByRole("combobox", { name: /^root$/i })).toBeInTheDocument();
+  });
+
   it("shows the track title", async () => {
     vi.mocked(fetch).mockImplementation((input) => {
       const url = String(input);
