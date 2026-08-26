@@ -224,6 +224,28 @@ describe("AudioPlayer", () => {
     );
   });
 
+  it("auto-deactivates the loop if A is re-set above B while it was active", () => {
+    const { container } = render(<AudioPlayer src="/api/tracks/track-1/audio" />);
+    const audio = getAudioElement(container);
+    Object.defineProperty(audio, "currentTime", { value: 20, configurable: true });
+    fireEvent.click(screen.getByRole("button", { name: /set a/i }));
+    Object.defineProperty(audio, "currentTime", { value: 30, configurable: true });
+    fireEvent.click(screen.getByRole("button", { name: /set b/i }));
+
+    expect(screen.getByRole("button", { name: /reset/i })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    Object.defineProperty(audio, "currentTime", { value: 40, configurable: true });
+    fireEvent.click(screen.getByRole("button", { name: "A 0:20" }));
+
+    expect(screen.getByRole("button", { name: /reset/i })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
   it("clears A and B and turns the loop off when the loop toggle is switched off", () => {
     const { container } = render(<AudioPlayer src="/api/tracks/track-1/audio" />);
     const audio = getAudioElement(container);

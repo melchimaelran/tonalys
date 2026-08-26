@@ -91,7 +91,9 @@ export function AudioPlayer({ src, onTimeUpdate }: AudioPlayerProps) {
   function handleSetPointA() {
     const audio = audioRef.current;
     if (!audio) return;
-    setPointA(audio.currentTime);
+    const time = audio.currentTime;
+    setPointA(time);
+    setLoopEnabled(pointB !== null && time < pointB);
   }
 
   function handleSetPointB() {
