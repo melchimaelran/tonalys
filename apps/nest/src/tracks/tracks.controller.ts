@@ -107,4 +107,18 @@ export class TracksController {
       },
     });
   }
+
+  @Get(':id')
+  async getTrack(@Param('id') id: string) {
+    const track = await this.prismaService.track.findUnique({
+      where: { id },
+      select: { id: true, title: true },
+    });
+
+    if (!track) {
+      throw new NotFoundException('Track not found');
+    }
+
+    return track;
+  }
 }

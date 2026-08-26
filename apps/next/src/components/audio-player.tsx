@@ -26,11 +26,22 @@ function setPreservesPitch(audio: HTMLAudioElement) {
   prefixed.mozPreservesPitch = true;
 }
 
+function formatTime(seconds: number): string {
+  const totalSeconds = Math.floor(seconds);
+  const minutes = Math.floor(totalSeconds / 60);
+  const remainingSeconds = totalSeconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+}
+
 export function AudioPlayer({ src, onTimeUpdate }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [pointA, setPointA] = useState<number | null>(null);
+  const [pointB, setPointB] = useState<number | null>(null);
+  const [loopEnabled, setLoopEnabled] = useState(false);
+  const canLoop = pointA !== null && pointB !== null && pointA < pointB;
 
   function togglePlay() {
     const audio = audioRef.current;
@@ -49,7 +60,14 @@ export function AudioPlayer({ src, onTimeUpdate }: AudioPlayerProps) {
   }
 
   function handleTimeUpdate(event: SyntheticEvent<HTMLAudioElement>) {
-    const time = event.currentTarget.currentTime;
+    const audio = event.currentTarget;
+    const time = audio.currentTime;
+
+    if (loopEnabled && pointA !== null && pointB !== null && time >= pointB) {
+      audio.currentTime = pointA;
+      return;
+    }
+
     setCurrentTime(time);
     onTimeUpdate?.(time);
   }
@@ -70,6 +88,33 @@ export function AudioPlayer({ src, onTimeUpdate }: AudioPlayerProps) {
     setPreservesPitch(audio);
   }
 
+  function handleSetPointA() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setPointA(audio.currentTime);
+  }
+
+  function handleSetPointB() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const time = audio.currentTime;
+    setPointB(time);
+    if (pointA !== null && pointA < time) {
+      setLoopEnabled(true);
+    }
+  }
+
+  function toggleLoop() {
+    setLoopEnabled((enabled) => {
+      const next = !enabled;
+      if (!next) {
+        setPointA(null);
+        setPointB(null);
+      }
+      return next;
+    });
+  }
+
   function setAudioRef(node: HTMLAudioElement | null) {
     audioRef.current = node;
     if (node) {
@@ -78,7 +123,7 @@ export function AudioPlayer({ src, onTimeUpdate }: AudioPlayerProps) {
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex w-full flex-col gap-2">
       <audio
         ref={setAudioRef}
         src={src}
@@ -87,35 +132,78 @@ export function AudioPlayer({ src, onTimeUpdate }: AudioPlayerProps) {
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
       />
-      <Button
-        type="button"
-        size="sm"
-        onClick={togglePlay}
-        aria-label={isPlaying ? "Pause" : "Play"}
-      >
-        {isPlaying ? "Pause" : "Play"}
-      </Button>
-      <input
-        type="range"
-        aria-label="Seek"
-        min={0}
-        max={duration || 0}
-        value={currentTime}
-        onChange={handleSeek}
-        className="flex-1"
-      />
-      <select
-        aria-label="Playback speed"
-        defaultValue="1"
-        onChange={handleSpeedChange}
-        className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground shadow-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-      >
-        {PLAYBACK_SPEEDS.map((speed) => (
-          <option key={speed} value={speed}>
-            {speed}x
-          </option>
-        ))}
-      </select>
+      <div className="flex w-full items-center gap-3">
+        <div className="relative flex h-5 flex-1 items-center">
+          <input
+            type="range"
+            aria-label="Seek"
+            min={0}
+            max={duration || 0}
+            value={currentTime}
+            onChange={handleSeek}
+            className="h-1.5 w-full cursor-pointer rounded-full accent-primary"
+          />
+          {pointA !== null && duration > 0 && (
+            <div
+              data-testid="loop-marker-a"
+              className="pointer-events-none absolute inset-y-0 w-1 -translate-x-1/2 rounded-full bg-amber-500"
+              style={{ left: `${(pointA / duration) * 100}%` }}
+            />
+          )}
+          {pointB !== null && duration > 0 && (
+            <div
+              data-testid="loop-marker-b"
+              className="pointer-events-none absolute inset-y-0 w-1 -translate-x-1/2 rounded-full bg-amber-500"
+              style={{ left: `${(pointB / duration) * 100}%` }}
+            />
+          )}
+        </div>
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+          {formatTime(currentTime)} / {formatTime(duration)}
+        </span>
+      </div>
+      <div className="flex items-center gap-3">
+        <Button
+          type="button"
+          size="sm"
+          onClick={togglePlay}
+          aria-label={isPlaying ? "Pause" : "Play"}
+        >
+          {isPlaying ? "Pause" : "Play"}
+        </Button>
+        <select
+          aria-label="Playback speed"
+          defaultValue="1"
+          onChange={handleSpeedChange}
+          className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground shadow-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
+        >
+          {PLAYBACK_SPEEDS.map((speed) => (
+            <option key={speed} value={speed}>
+              {speed}x
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-2 py-1.5">
+        <span className="text-xs font-medium text-muted-foreground">A–B Loop</span>
+        <Button type="button" size="sm" variant="outline" onClick={handleSetPointA}>
+          {pointA !== null ? `A ${formatTime(pointA)}` : "Set A"}
+        </Button>
+        <Button type="button" size="sm" variant="outline" onClick={handleSetPointB}>
+          {pointB !== null ? `B ${formatTime(pointB)}` : "Set B"}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={loopEnabled ? "default" : "outline"}
+          disabled={!canLoop}
+          aria-pressed={loopEnabled}
+          onClick={toggleLoop}
+          className="ml-auto"
+        >
+          Reset
+        </Button>
+      </div>
     </div>
   );
 }

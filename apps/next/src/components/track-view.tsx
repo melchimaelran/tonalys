@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CurrentChordDisplay } from "@/components/current-chord-display";
 import { GuitarChordDiagram } from "@/components/guitar-chord-diagram";
 import { PianoKeyboard } from "@/components/piano-keyboard";
+import { useTrack } from "@/hooks/use-track";
 import { useTrackChords } from "@/hooks/use-track-chords";
 import { getChordNotes } from "@/lib/chord-notes";
 import { findChordAtTime } from "@/lib/find-chord-at-time";
@@ -20,6 +21,7 @@ export interface TrackViewProps {
 export function TrackView({ trackId }: TrackViewProps) {
   const [currentTime, setCurrentTime] = useState(0);
   const [view, setView] = useState<ChordView>("piano");
+  const track = useTrack(trackId);
   const chords = useTrackChords(trackId);
   const currentChord = findChordAtTime(chords.data ?? [], currentTime);
   const highlightedNotes = currentChord
@@ -30,7 +32,8 @@ export function TrackView({ trackId }: TrackViewProps) {
     : null;
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex w-full max-w-2xl flex-col items-center gap-6">
+      {track.data && <h1 className="text-lg font-semibold">{track.data.title}</h1>}
       <CurrentChordDisplay chord={currentChord} />
       <div className="flex gap-2" role="tablist" aria-label="Chord view">
         <Button

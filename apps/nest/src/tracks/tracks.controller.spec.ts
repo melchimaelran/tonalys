@@ -172,6 +172,29 @@ describe('TracksController', () => {
     ).rejects.toThrow(NotFoundException);
   });
 
+  it('returns the track title', async () => {
+    prismaService.track.findUnique.mockResolvedValue({
+      id: 'track-1',
+      title: 'My Song.mp3',
+    });
+
+    const result = await controller.getTrack('track-1');
+
+    expect(prismaService.track.findUnique).toHaveBeenCalledWith({
+      where: { id: 'track-1' },
+      select: { id: true, title: true },
+    });
+    expect(result).toEqual({ id: 'track-1', title: 'My Song.mp3' });
+  });
+
+  it('throws NotFoundException for getTrack when the track does not exist', async () => {
+    prismaService.track.findUnique.mockResolvedValue(null);
+
+    await expect(controller.getTrack('unknown')).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
   it('returns the chord segments for a track, ordered by start time', async () => {
     prismaService.track.findUnique.mockResolvedValue({ id: 'track-1' });
     prismaService.chordSegment.findMany.mockResolvedValue([
