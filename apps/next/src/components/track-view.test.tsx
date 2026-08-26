@@ -118,6 +118,25 @@ describe("TrackView", () => {
     );
   });
 
+  it("transposes the bass note of a slash chord along with the root", async () => {
+    const chords = [
+      { id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "major", bassNote: "F" },
+    ];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    renderTrackView("track-1");
+    await screen.findByText("C/F major");
+
+    fireEvent.change(screen.getByRole("combobox", { name: /transpose/i }), {
+      target: { value: "2" },
+    });
+
+    expect(screen.getByText("D/G major")).toBeInTheDocument();
+    expect(screen.queryByText("C/F major")).not.toBeInTheDocument();
+  });
+
   it("does not show the transpose selector on the guitar view", async () => {
     vi.mocked(fetch).mockImplementation(() =>
       Promise.resolve(new Response(JSON.stringify([]), { status: 200 })),
@@ -172,6 +191,26 @@ describe("TrackView", () => {
       "src",
       "/api/tracks/track-1/audio",
     );
+  });
+
+  it("transposes the bass note of a slash chord along with the root when the capo changes", async () => {
+    const chords = [
+      { id: "seg-1", startTime: 0, endTime: 5, root: "D", chordType: "major", bassNote: "A" },
+    ];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    renderTrackView("track-1");
+    await screen.findByText("D/A major");
+    fireEvent.click(screen.getByRole("tab", { name: /guitar/i }));
+
+    fireEvent.change(screen.getByRole("combobox", { name: /capo/i }), {
+      target: { value: "2" },
+    });
+
+    expect(screen.getByText("C/G major")).toBeInTheDocument();
+    expect(screen.queryByText("D/A major")).not.toBeInTheDocument();
   });
 
   it("shows the real chord name again (not capo-transposed) when switching back to piano", async () => {
