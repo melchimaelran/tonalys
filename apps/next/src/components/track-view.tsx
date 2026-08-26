@@ -61,6 +61,7 @@ export function TrackView({ trackId }: TrackViewProps) {
           <ChordEditForm
             root={currentChord.root}
             chordType={currentChord.chordType}
+            isSaving={updateChordSegment.isPending}
             onSave={(root, chordType) => {
               updateChordSegment.mutate(
                 { segmentId: currentChord.id, root, chordType },

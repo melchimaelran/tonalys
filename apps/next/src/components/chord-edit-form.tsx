@@ -11,9 +11,16 @@ export interface ChordEditFormProps {
   chordType: string;
   onSave: (root: string, chordType: string) => void;
   onCancel: () => void;
+  isSaving?: boolean;
 }
 
-export function ChordEditForm({ root, chordType, onSave, onCancel }: ChordEditFormProps) {
+export function ChordEditForm({
+  root,
+  chordType,
+  onSave,
+  onCancel,
+  isSaving = false,
+}: ChordEditFormProps) {
   const [editedRoot, setEditedRoot] = useState(root);
   const [editedChordType, setEditedChordType] = useState(chordType);
 
@@ -46,10 +53,15 @@ export function ChordEditForm({ root, chordType, onSave, onCancel }: ChordEditFo
           </option>
         ))}
       </select>
-      <Button type="button" size="sm" onClick={() => onSave(editedRoot, editedChordType)}>
+      <Button
+        type="button"
+        size="sm"
+        disabled={isSaving}
+        onClick={() => onSave(editedRoot, editedChordType)}
+      >
         Save
       </Button>
-      <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+      <Button type="button" size="sm" variant="outline" disabled={isSaving} onClick={onCancel}>
         Cancel
       </Button>
     </div>

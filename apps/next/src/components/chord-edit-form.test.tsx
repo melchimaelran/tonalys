@@ -32,6 +32,20 @@ describe("ChordEditForm", () => {
     expect(onSave).toHaveBeenCalledWith("G", "minor");
   });
 
+  it("disables the Save button while saving is in progress", () => {
+    render(
+      <ChordEditForm
+        root="C"
+        chordType="major"
+        onSave={vi.fn()}
+        onCancel={vi.fn()}
+        isSaving
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /save/i })).toBeDisabled();
+  });
+
   it("calls onCancel when Cancel is clicked", () => {
     const onCancel = vi.fn();
     render(<ChordEditForm root="C" chordType="major" onSave={vi.fn()} onCancel={onCancel} />);
