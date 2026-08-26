@@ -16,6 +16,7 @@ import { transposeRoot } from "@/lib/notes";
 type ChordView = "piano" | "guitar";
 
 const CAPO_POSITIONS = [0, 1, 2, 3, 4, 5, 6, 7];
+const TRANSPOSE_POSITIONS = [-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6];
 
 export interface TrackViewProps {
   trackId: string;
@@ -25,11 +26,17 @@ export function TrackView({ trackId }: TrackViewProps) {
   const [currentTime, setCurrentTime] = useState(0);
   const [view, setView] = useState<ChordView>("piano");
   const [capo, setCapo] = useState(0);
+  const [transpose, setTranspose] = useState(0);
   const track = useTrack(trackId);
   const chords = useTrackChords(trackId);
   const currentChord = findChordAtTime(chords.data ?? [], currentTime);
+  // Transpose is a plain visual shift of the displayed name/notes — never
+  // touches audio.
+  const pianoLookupRoot = currentChord
+    ? transposeRoot(currentChord.root, transpose) || currentChord.root
+    : "";
   const highlightedNotes = currentChord
-    ? getChordNotes(currentChord.root, currentChord.chordType)
+    ? getChordNotes(pianoLookupRoot, currentChord.chordType)
     : [];
   // A capo on fret N makes the shape you finger sound N semitones higher —
   // so to sound the actual chord, look up the shape transposed DOWN by the
@@ -38,12 +45,9 @@ export function TrackView({ trackId }: TrackViewProps) {
   const guitarShape = currentChord
     ? getGuitarChordShape(guitarLookupRoot, currentChord.chordType)
     : null;
-  // Piano has no transpose control yet (TON-032) — it always shows the real
-  // chord. Guitar shows the capo-transposed name, matching the shape below.
-  const displayedChord =
-    currentChord && view === "guitar"
-      ? { ...currentChord, root: guitarLookupRoot }
-      : currentChord;
+  const displayedChord = currentChord
+    ? { ...currentChord, root: view === "guitar" ? guitarLookupRoot : pianoLookupRoot }
+    : currentChord;
 
   return (
     <div className="flex w-full max-w-2xl flex-col items-center gap-6">
@@ -72,7 +76,30 @@ export function TrackView({ trackId }: TrackViewProps) {
         </Button>
       </div>
       {view === "piano" ? (
-        <PianoKeyboard highlightedNotes={highlightedNotes} />
+        <div className="flex w-full flex-col items-center gap-2">
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="transpose-select"
+              className="text-xs font-medium text-muted-foreground"
+            >
+              Transpose
+            </label>
+            <select
+              id="transpose-select"
+              aria-label="Transpose"
+              value={transpose}
+              onChange={(event) => setTranspose(Number(event.target.value))}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground shadow-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
+            >
+              {TRANSPOSE_POSITIONS.map((position) => (
+                <option key={position} value={position}>
+                  {position > 0 ? `+${position}` : position}
+                </option>
+              ))}
+            </select>
+          </div>
+          <PianoKeyboard highlightedNotes={highlightedNotes} />
+        </div>
       ) : (
         <div className="flex flex-col items-center gap-2">
           <div className="flex items-center gap-2">
