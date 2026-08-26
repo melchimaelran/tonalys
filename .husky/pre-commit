@@ -1,0 +1,4 @@
+pnpm --filter nest exec prisma generate
+pnpm exec turbo run lint
+pnpm exec turbo run typecheck
+pnpm exec turbo run test
