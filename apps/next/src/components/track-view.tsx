@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { AudioPlayer } from "@/components/audio-player";
 import { Button } from "@/components/ui/button";
+import { ChordEditForm } from "@/components/chord-edit-form";
 import { CurrentChordDisplay } from "@/components/current-chord-display";
 import { GuitarChordDiagram } from "@/components/guitar-chord-diagram";
 import { PianoKeyboard } from "@/components/piano-keyboard";
 import { useTrack } from "@/hooks/use-track";
 import { useTrackChords } from "@/hooks/use-track-chords";
+import { useUpdateChordSegment } from "@/hooks/use-update-chord-segment";
 import { getChordNotes } from "@/lib/chord-notes";
 import { findChordAtTime } from "@/lib/find-chord-at-time";
 import { getGuitarChordShape } from "@/lib/guitar-chord-shape";
@@ -27,8 +29,10 @@ export function TrackView({ trackId }: TrackViewProps) {
   const [view, setView] = useState<ChordView>("piano");
   const [capo, setCapo] = useState(0);
   const [transpose, setTranspose] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
   const track = useTrack(trackId);
   const chords = useTrackChords(trackId);
+  const updateChordSegment = useUpdateChordSegment(trackId);
   const currentChord = findChordAtTime(chords.data ?? [], currentTime);
   // Transpose is a plain visual shift of the displayed name/notes — never
   // touches audio.
@@ -52,7 +56,31 @@ export function TrackView({ trackId }: TrackViewProps) {
   return (
     <div className="flex w-full max-w-2xl flex-col items-center gap-6">
       {track.data && <h1 className="text-lg font-semibold">{track.data.title}</h1>}
-      <CurrentChordDisplay chord={displayedChord} />
+      {isEditing && currentChord ? (
+        <ChordEditForm
+          root={currentChord.root}
+          chordType={currentChord.chordType}
+          onSave={(root, chordType) => {
+            updateChordSegment.mutate({ segmentId: currentChord.id, root, chordType });
+            setIsEditing(false);
+          }}
+          onCancel={() => setIsEditing(false)}
+        />
+      ) : (
+        <div className="flex items-center gap-2">
+          <CurrentChordDisplay chord={displayedChord} />
+          {currentChord && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setIsEditing(true)}
+            >
+              Edit
+            </Button>
+          )}
+        </div>
+      )}
       <div className="flex gap-2" role="tablist" aria-label="Chord view">
         <Button
           type="button"

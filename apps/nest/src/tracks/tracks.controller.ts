@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Headers,
@@ -6,6 +7,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  Patch,
   Res,
   StreamableFile,
 } from '@nestjs/common';
@@ -13,6 +15,7 @@ import type { Response } from 'express';
 import { extname } from 'node:path';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import { UpdateChordSegmentDto } from './dto/update-chord-segment.dto';
 
 const AUDIO_MIME_TYPES: Record<string, string> = {
   '.mp3': 'audio/mpeg',
@@ -98,6 +101,33 @@ export class TracksController {
     return this.prismaService.chordSegment.findMany({
       where: { trackId: id },
       orderBy: { startTime: 'asc' },
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        root: true,
+        chordType: true,
+      },
+    });
+  }
+
+  @Patch(':id/chords/:segmentId')
+  async updateChord(
+    @Param('id') id: string,
+    @Param('segmentId') segmentId: string,
+    @Body() dto: UpdateChordSegmentDto,
+  ) {
+    const segment = await this.prismaService.chordSegment.findUnique({
+      where: { id: segmentId },
+    });
+
+    if (!segment || segment.trackId !== id) {
+      throw new NotFoundException('Chord segment not found');
+    }
+
+    return this.prismaService.chordSegment.update({
+      where: { id: segmentId },
+      data: { root: dto.root, chordType: dto.chordType, isManualEdit: true },
       select: {
         id: true,
         startTime: true,
