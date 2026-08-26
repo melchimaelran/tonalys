@@ -25,14 +25,14 @@ export function noteIndex(note: string): number {
   return CHROMATIC_SCALE.indexOf(FLAT_ALIASES[note] ?? note);
 }
 
-// Shifting by a multiple of 12 before the modulo keeps the result positive
-// regardless of how negative `semitones` is (JS's `%` can return negative
-// values otherwise).
+// A second `% 12 + 12) % 12` keeps the result positive regardless of how
+// negative `semitones` is (JS's `%` can return negative values otherwise,
+// and a fixed positive offset isn't enough for arbitrarily large shifts).
 export function transposeRoot(root: string, semitones: number): string {
   const index = noteIndex(root);
   if (index === -1) {
     return "";
   }
 
-  return CHROMATIC_SCALE[(index + semitones + 12 * 12) % 12];
+  return CHROMATIC_SCALE[(((index + semitones) % 12) + 12) % 12];
 }

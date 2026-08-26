@@ -29,4 +29,8 @@ describe("transposeRoot", () => {
   it("returns an empty string for an unrecognized root", () => {
     expect(transposeRoot("H", 2)).toBe("");
   });
+
+  it("handles a negative shift larger than the fixed wraparound offset", () => {
+    expect(transposeRoot("C", -200)).toBe("E");
+  });
 });
