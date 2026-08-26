@@ -1,4 +1,8 @@
-import { NotFoundException, StreamableFile } from '@nestjs/common';
+import {
+  HttpException,
+  NotFoundException,
+  StreamableFile,
+} from '@nestjs/common';
 import type { Readable } from 'node:stream';
 import { TracksController } from './tracks.controller';
 import { PrismaService } from '../prisma/prisma.service';
@@ -114,6 +118,50 @@ describe('TracksController', () => {
     expect(res.set).toHaveBeenCalledWith('Content-Range', 'bytes 7-9/10');
     const chunk = await streamToBuffer(result.getStream());
     expect(chunk.toString()).toBe('789');
+  });
+
+  it('clamps a range end that overflows past the end of the file', async () => {
+    prismaService.track.findUnique.mockResolvedValue({
+      id: 'track-1',
+      audioFileKey: 'abc.mp3',
+    });
+    const buffer = Buffer.from('0123456789');
+    storageService.download.mockResolvedValue(buffer);
+
+    const result = await controller.streamAudio(
+      'track-1',
+      'bytes=5-999999',
+      res as never,
+    );
+
+    expect(res.set).toHaveBeenCalledWith('Content-Range', 'bytes 5-9/10');
+    const chunk = await streamToBuffer(result.getStream());
+    expect(chunk.toString()).toBe('56789');
+  });
+
+  it('returns 416 when the range start is past the end of the file', async () => {
+    prismaService.track.findUnique.mockResolvedValue({
+      id: 'track-1',
+      audioFileKey: 'abc.mp3',
+    });
+    storageService.download.mockResolvedValue(Buffer.from('0123456789'));
+
+    await expect(
+      controller.streamAudio('track-1', 'bytes=1000-', res as never),
+    ).rejects.toThrow(HttpException);
+    expect(res.set).toHaveBeenCalledWith('Content-Range', 'bytes */10');
+  });
+
+  it('returns 416 when the range start is after the range end', async () => {
+    prismaService.track.findUnique.mockResolvedValue({
+      id: 'track-1',
+      audioFileKey: 'abc.mp3',
+    });
+    storageService.download.mockResolvedValue(Buffer.from('0123456789'));
+
+    await expect(
+      controller.streamAudio('track-1', 'bytes=8-2', res as never),
+    ).rejects.toThrow(HttpException);
   });
 
   it('throws NotFoundException when the track does not exist', async () => {

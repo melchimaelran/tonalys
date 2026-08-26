@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Headers,
+  HttpException,
+  HttpStatus,
   NotFoundException,
   Param,
   Res,
@@ -19,16 +21,16 @@ const AUDIO_MIME_TYPES: Record<string, string> = {
 
 function parseRange(
   range: string | undefined,
-  totalLength: number,
-): { start: number; end: number } | null {
+): { start: number; end: number | null } | null {
   const match = range?.match(/^bytes=(\d*)-(\d*)$/);
   if (!match || (!match[1] && !match[2])) {
     return null;
   }
 
-  const start = match[1] ? parseInt(match[1], 10) : 0;
-  const end = match[2] ? parseInt(match[2], 10) : totalLength - 1;
-  return { start, end };
+  return {
+    start: match[1] ? parseInt(match[1], 10) : 0,
+    end: match[2] ? parseInt(match[2], 10) : null,
+  };
 }
 
 @Controller('tracks')
@@ -59,15 +61,26 @@ export class TracksController {
 
     res.set('Accept-Ranges', 'bytes');
 
-    const parsed = parseRange(range, buffer.length);
+    const parsed = parseRange(range);
     if (!parsed) {
       return new StreamableFile(buffer, { type });
     }
 
-    const { start, end } = parsed;
+    const totalLength = buffer.length;
+    const { start } = parsed;
+    const end = Math.min(parsed.end ?? totalLength - 1, totalLength - 1);
+
+    if (start >= totalLength || start > end) {
+      res.set('Content-Range', `bytes */${totalLength}`);
+      throw new HttpException(
+        'Range Not Satisfiable',
+        HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE,
+      );
+    }
+
     const chunk = buffer.subarray(start, end + 1);
     res.status(206);
-    res.set('Content-Range', `bytes ${start}-${end}/${buffer.length}`);
+    res.set('Content-Range', `bytes ${start}-${end}/${totalLength}`);
 
     return new StreamableFile(chunk, { type });
   }
