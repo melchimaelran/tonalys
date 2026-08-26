@@ -234,6 +234,25 @@ describe("AudioPlayer", () => {
     expect(audio.currentTime).toBe(10);
   });
 
+  it("does not jump back when B is re-set below A while the loop is active", () => {
+    const { container } = render(<AudioPlayer src="/api/tracks/track-1/audio" />);
+    const audio = getAudioElement(container);
+    Object.defineProperty(audio, "currentTime", { value: 20, configurable: true });
+    fireEvent.click(screen.getByRole("button", { name: /set a/i }));
+    Object.defineProperty(audio, "currentTime", { value: 30, configurable: true });
+    fireEvent.click(screen.getByRole("button", { name: /set b/i }));
+
+    // Loop is now active (A=20, B=30). Re-marking B below A shouldn't leave
+    // the loop jumping back forever the instant playback reaches the new B.
+    Object.defineProperty(audio, "currentTime", { value: 10, configurable: true });
+    fireEvent.click(screen.getByRole("button", { name: "B 0:30" }));
+
+    Object.defineProperty(audio, "currentTime", { value: 10, configurable: true, writable: true });
+    fireEvent.timeUpdate(audio);
+
+    expect(audio.currentTime).toBe(10);
+  });
+
   it("stops jumping back once the loop is turned off", () => {
     const { container } = render(<AudioPlayer src="/api/tracks/track-1/audio" />);
     const audio = getAudioElement(container);

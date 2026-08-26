@@ -63,7 +63,7 @@ export function AudioPlayer({ src, onTimeUpdate }: AudioPlayerProps) {
     const audio = event.currentTarget;
     const time = audio.currentTime;
 
-    if (loopEnabled && pointA !== null && pointB !== null && time >= pointB) {
+    if (loopEnabled && pointA !== null && pointB !== null && pointA < pointB && time >= pointB) {
       audio.currentTime = pointA;
       return;
     }
