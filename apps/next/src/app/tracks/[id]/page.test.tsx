@@ -13,7 +13,10 @@ function Wrapper({ children }: { children: ReactNode }) {
 
 describe("TrackPage", () => {
   beforeEach(() => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify([]))));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify([])))),
+    );
   });
 
   it("renders an AudioPlayer pointed at the track's audio endpoint", async () => {

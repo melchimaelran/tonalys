@@ -22,7 +22,9 @@ describe("TrackView", () => {
   });
 
   it("points the AudioPlayer at the track's audio endpoint", async () => {
-    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify([]), { status: 200 }));
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify([]), { status: 200 })),
+    );
 
     const { container } = renderTrackView("track-1");
 
@@ -35,7 +37,9 @@ describe("TrackView", () => {
 
   it("highlights the chord matching the audio's current playback time", async () => {
     const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "maj" }];
-    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify(chords), { status: 200 }));
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
 
     const { container } = renderTrackView("track-1");
     await screen.findByText("C maj");
@@ -49,7 +53,9 @@ describe("TrackView", () => {
 
   it("highlights the piano keys for the chord playing at the current time", async () => {
     const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "major" }];
-    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify(chords), { status: 200 }));
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
 
     renderTrackView("track-1");
 
@@ -61,7 +67,9 @@ describe("TrackView", () => {
   });
 
   it("shows the piano by default and not the guitar diagram", async () => {
-    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify([]), { status: 200 }));
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify([]), { status: 200 })),
+    );
 
     renderTrackView("track-1");
     await screen.findByText("—");
@@ -72,7 +80,9 @@ describe("TrackView", () => {
 
   it("switches to the guitar diagram and hides the piano when that tab is selected", async () => {
     const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "major" }];
-    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify(chords), { status: 200 }));
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
 
     renderTrackView("track-1");
     await screen.findByText("C major");
@@ -81,5 +91,21 @@ describe("TrackView", () => {
 
     expect(screen.getByRole("img", { name: "Guitar chord diagram" })).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "Piano keyboard" })).not.toBeInTheDocument();
+  });
+
+  it("shows the track title", async () => {
+    vi.mocked(fetch).mockImplementation((input) => {
+      const url = String(input);
+      if (url === "/api/tracks/track-1") {
+        return Promise.resolve(
+          new Response(JSON.stringify({ id: "track-1", title: "My Song.mp3" }), { status: 200 }),
+        );
+      }
+      return Promise.resolve(new Response(JSON.stringify([]), { status: 200 }));
+    });
+
+    renderTrackView("track-1");
+
+    expect(await screen.findByRole("heading", { name: "My Song.mp3" })).toBeInTheDocument();
   });
 });
