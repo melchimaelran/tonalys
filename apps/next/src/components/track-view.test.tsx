@@ -93,6 +93,62 @@ describe("TrackView", () => {
     expect(screen.queryByRole("img", { name: "Piano keyboard" })).not.toBeInTheDocument();
   });
 
+  it("recomputes the displayed chord name and piano highlight when transpose changes, without touching audio", async () => {
+    const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "major" }];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    const { container } = renderTrackView("track-1");
+    await screen.findByText("C major");
+    expect(screen.getByTestId("piano-key-C-1")).toHaveClass("bg-primary");
+
+    fireEvent.change(screen.getByRole("combobox", { name: /transpose/i }), {
+      target: { value: "2" },
+    });
+
+    expect(screen.getByText("D major")).toBeInTheDocument();
+    expect(screen.queryByText("C major")).not.toBeInTheDocument();
+    expect(screen.getByTestId("piano-key-D-1")).toHaveClass("bg-primary");
+    expect(screen.getByTestId("piano-key-C-1")).not.toHaveClass("bg-primary");
+    // Transpose is purely visual — it must never touch the audio element itself.
+    expect(container.querySelector("audio")).toHaveAttribute(
+      "src",
+      "/api/tracks/track-1/audio",
+    );
+  });
+
+  it("does not show the transpose selector on the guitar view", async () => {
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify([]), { status: 200 })),
+    );
+
+    renderTrackView("track-1");
+    await screen.findByText("—");
+    fireEvent.click(screen.getByRole("tab", { name: /guitar/i }));
+
+    expect(screen.queryByRole("combobox", { name: /transpose/i })).not.toBeInTheDocument();
+  });
+
+  it("shows the real chord name again (not transposed) when switching back to guitar", async () => {
+    const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "major" }];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    renderTrackView("track-1");
+    await screen.findByText("C major");
+    fireEvent.change(screen.getByRole("combobox", { name: /transpose/i }), {
+      target: { value: "2" },
+    });
+    expect(screen.getByText("D major")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: /guitar/i }));
+
+    expect(screen.getByText("C major")).toBeInTheDocument();
+    expect(screen.queryByText("D major")).not.toBeInTheDocument();
+  });
+
   it("recomputes the displayed chord name and shape when the capo changes, without touching audio", async () => {
     const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "D", chordType: "major" }];
     vi.mocked(fetch).mockImplementation(() =>
