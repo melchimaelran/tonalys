@@ -46,4 +46,17 @@ describe("TrackView", () => {
 
     expect(screen.getByText("—")).toBeInTheDocument();
   });
+
+  it("highlights the piano keys for the chord playing at the current time", async () => {
+    const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "major" }];
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify(chords), { status: 200 }));
+
+    renderTrackView("track-1");
+
+    await screen.findByText("C major");
+    expect(screen.getByTestId("piano-key-C-1")).toHaveClass("bg-primary");
+    expect(screen.getByTestId("piano-key-E-1")).toHaveClass("bg-primary");
+    expect(screen.getByTestId("piano-key-G-1")).toHaveClass("bg-primary");
+    expect(screen.getByTestId("piano-key-D-1")).not.toHaveClass("bg-primary");
+  });
 });
