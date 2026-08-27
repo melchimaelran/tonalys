@@ -43,6 +43,21 @@ export class TracksController {
     private readonly storageService: StorageService,
   ) {}
 
+  @Get()
+  async listTracks() {
+    return this.prismaService.track.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        sourceType: true,
+        durationSeconds: true,
+        createdAt: true,
+      },
+    });
+  }
+
   @Get(':id/audio')
   async streamAudio(
     @Param('id') id: string,
