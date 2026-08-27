@@ -19,7 +19,7 @@ async function streamToBuffer(stream: Readable): Promise<Buffer> {
 describe('TracksController', () => {
   let controller: TracksController;
   let prismaService: {
-    track: { findUnique: jest.Mock };
+    track: { findUnique: jest.Mock; findMany: jest.Mock };
     chordSegment: {
       findMany: jest.Mock;
       findFirst: jest.Mock;
@@ -31,7 +31,7 @@ describe('TracksController', () => {
 
   beforeEach(() => {
     prismaService = {
-      track: { findUnique: jest.fn() },
+      track: { findUnique: jest.fn(), findMany: jest.fn() },
       chordSegment: {
         findMany: jest.fn(),
         findFirst: jest.fn(),
@@ -178,6 +178,43 @@ describe('TracksController', () => {
     await expect(
       controller.streamAudio('unknown', undefined, res as never),
     ).rejects.toThrow(NotFoundException);
+  });
+
+  it('lists all tracks, newest first', async () => {
+    const tracks = [
+      {
+        id: 'track-2',
+        title: 'Newer.mp3',
+        status: 'READY',
+        sourceType: 'UPLOAD',
+        durationSeconds: 180,
+        createdAt: new Date('2026-02-01T00:00:00Z'),
+      },
+      {
+        id: 'track-1',
+        title: 'Older.mp3',
+        status: 'READY',
+        sourceType: 'YOUTUBE',
+        durationSeconds: null,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      },
+    ];
+    prismaService.track.findMany.mockResolvedValue(tracks);
+
+    const result = await controller.listTracks();
+
+    expect(prismaService.track.findMany).toHaveBeenCalledWith({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        sourceType: true,
+        durationSeconds: true,
+        createdAt: true,
+      },
+    });
+    expect(result).toBe(tracks);
   });
 
   it('returns the track title', async () => {
