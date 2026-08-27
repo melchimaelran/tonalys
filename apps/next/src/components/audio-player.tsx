@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent, type SyntheticEvent } from "react";
+import { Pause, Play, Repeat } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 
 export interface AudioPlayerProps {
@@ -169,7 +170,11 @@ export function AudioPlayer({ src, onTimeUpdate }: AudioPlayerProps) {
           onClick={togglePlay}
           aria-label={isPlaying ? "Pause" : "Play"}
         >
-          {isPlaying ? "Pause" : "Play"}
+          {isPlaying ? (
+            <Pause aria-hidden weight="fill" />
+          ) : (
+            <Play aria-hidden weight="fill" />
+          )}
         </Button>
         <select
           aria-label="Playback speed"
@@ -201,6 +206,7 @@ export function AudioPlayer({ src, onTimeUpdate }: AudioPlayerProps) {
           onClick={toggleLoop}
           className="ml-auto"
         >
+          <Repeat data-icon="inline-start" aria-hidden />
           Reset
         </Button>
       </div>

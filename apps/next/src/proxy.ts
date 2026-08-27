@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/api/login"];
+const PUBLIC_PATHS = ["/login", "/api/login", "/about"];
 
 // Cheap expiry check only — no signature verification (that needs
 // JWT_SECRET, which next doesn't and shouldn't hold). nest's

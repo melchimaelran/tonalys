@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { FileArrowUp, UploadSimple, YoutubeLogo } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalysisStatus } from "@/components/analysis-status";
+import { BackLink } from "@/components/back-link";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { YoutubeLinkForm } from "@/components/youtube-link-form";
 import { useJobStatus } from "@/hooks/use-job-status";
@@ -72,8 +74,11 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-background">
-      <Card className="w-full max-w-sm">
+    <div className="flex flex-1 flex-col items-center gap-4 bg-background p-4">
+      <div className="w-full max-w-sm">
+        <BackLink href="/" label="Library" />
+      </div>
+      <Card className="mt-auto mb-auto w-full max-w-sm">
         <CardHeader>
           <CardTitle>Add a track</CardTitle>
         </CardHeader>
@@ -106,6 +111,7 @@ export default function UploadPage() {
                   aria-selected={source === "file"}
                   onClick={() => handleSourceChange("file")}
                 >
+                  <FileArrowUp data-icon="inline-start" aria-hidden />
                   Upload file
                 </Button>
                 <Button
@@ -116,6 +122,7 @@ export default function UploadPage() {
                   aria-selected={source === "youtube"}
                   onClick={() => handleSourceChange("youtube")}
                 >
+                  <YoutubeLogo data-icon="inline-start" aria-hidden />
                   YouTube link
                 </Button>
               </div>
@@ -133,6 +140,7 @@ export default function UploadPage() {
                         disabled={isSubmitting}
                         onClick={() => submitFile(selectedFile)}
                       >
+                        <UploadSimple data-icon="inline-start" aria-hidden />
                         {isSubmitting ? "Uploading..." : "Upload"}
                       </Button>
                     </>

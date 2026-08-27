@@ -72,4 +72,10 @@ describe("proxy", () => {
 
     expect(response.headers.get("location")).toBeNull();
   });
+
+  it("lets the public About page through without a cookie", () => {
+    const response = proxy(makeRequest("/about"));
+
+    expect(response.headers.get("location")).toBeNull();
+  });
 });
