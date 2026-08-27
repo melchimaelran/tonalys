@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CaretRight, MusicNotes, Plus } from "@phosphor-icons/react";
 import { useTracks, type TrackSummary } from "@/hooks/use-tracks";
 
 function formatDate(iso: string): string {
@@ -37,6 +38,7 @@ function TrackRow({ track }: { track: TrackSummary }) {
         <span className="shrink-0 rounded-full bg-foreground/10 px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground">
           {track.status}
         </span>
+        <CaretRight aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
       </Link>
     </li>
   );
@@ -64,11 +66,13 @@ export function TrackLibrary() {
   if (data.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 p-8 text-center">
+        <MusicNotes aria-hidden className="size-8 text-muted-foreground" />
         <p className="text-sm text-muted-foreground">No tracks yet.</p>
         <Link
           href="/upload"
-          className="text-sm font-medium text-foreground underline underline-offset-4"
+          className="inline-flex items-center gap-1 text-sm font-medium text-foreground underline underline-offset-4"
         >
+          <Plus aria-hidden className="size-3.5" />
           Add a track
         </Link>
       </div>
@@ -78,11 +82,12 @@ export function TrackLibrary() {
   return (
     <div className="w-full">
       <div className="flex items-center justify-between px-4 py-3">
-        <h1 className="text-base font-semibold">Library</h1>
+        <h2 className="text-base font-semibold">Library</h2>
         <Link
           href="/upload"
-          className="text-sm font-medium text-foreground underline underline-offset-4"
+          className="inline-flex items-center gap-1 text-sm font-medium text-foreground underline underline-offset-4"
         >
+          <Plus aria-hidden className="size-3.5" />
           Add a track
         </Link>
       </div>

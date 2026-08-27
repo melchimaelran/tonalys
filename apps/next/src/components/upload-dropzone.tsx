@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ChangeEvent, type DragEvent } from "react";
+import { UploadSimple } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
@@ -64,6 +65,7 @@ export function UploadDropzone({ onFileSelected }: UploadDropzoneProps) {
         isDragging ? "border-primary bg-accent" : "border-input",
       )}
     >
+      <UploadSimple aria-hidden className="size-6 text-muted-foreground" />
       <label htmlFor="audio-file" className="cursor-pointer text-sm font-medium">
         Drag and drop an audio file here, or click to browse
         <input

@@ -51,4 +51,22 @@ describe("Home", () => {
       await screen.findByRole("link", { name: /add a track/i }),
     ).toHaveAttribute("href", "/upload");
   });
+
+  it("shows a hero with a tagline and an upload call to action", () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify([]), { status: 200 }),
+    );
+
+    renderPage();
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Tonalys" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/detect chords, tempo and key/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /upload a track/i }),
+    ).toHaveAttribute("href", "/upload");
+  });
 });

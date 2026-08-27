@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PencilSimple } from "@phosphor-icons/react";
 import { AudioPlayer } from "@/components/audio-player";
 import { Button } from "@/components/ui/button";
 import { ChordEditForm } from "@/components/chord-edit-form";
@@ -95,6 +96,7 @@ export function TrackView({ trackId }: TrackViewProps) {
               variant="outline"
               onClick={() => setIsEditing(true)}
             >
+              <PencilSimple data-icon="inline-start" aria-hidden />
               Edit
             </Button>
           )}

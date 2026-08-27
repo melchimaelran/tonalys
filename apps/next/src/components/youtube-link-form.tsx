@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ChangeEvent, type FormEvent } from "react";
+import { MagnifyingGlass } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,7 +56,10 @@ export function YoutubeLinkForm({ onUrlSubmitted }: YoutubeLinkFormProps) {
         aria-invalid={error ? true : undefined}
       />
       {error && <p className="text-xs text-destructive">{error}</p>}
-      <Button type="submit">Analyze</Button>
+      <Button type="submit">
+        <MagnifyingGlass data-icon="inline-start" aria-hidden />
+        Analyze
+      </Button>
     </form>
   );
 }
