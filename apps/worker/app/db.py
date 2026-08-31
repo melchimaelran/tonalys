@@ -34,8 +34,8 @@ def save_chord_segments(track_id: str, segments: list[ChordSegment]) -> None:
             cur.execute(
                 """
                 INSERT INTO chord_segments
-                    (id, track_id, start_time, end_time, root, chord_type, is_manual_edit)
-                VALUES (%s, %s, %s, %s, %s, %s, false)
+                    (id, track_id, start_time, end_time, root, chord_type, bass_note, is_manual_edit)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, false)
                 """,
                 (
                     str(uuid.uuid4()),
@@ -44,6 +44,7 @@ def save_chord_segments(track_id: str, segments: list[ChordSegment]) -> None:
                     segment.end_time,
                     segment.root,
                     segment.chord_type,
+                    segment.bass_note,
                 ),
             )
 

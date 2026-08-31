@@ -1,22 +1,27 @@
-from collections import Counter
+import os
+import sys
+import tempfile
 from dataclasses import dataclass
-from typing import TypeVar
 
-import essentia.standard as es
 import numpy as np
 from madmom.features.beats import DBNBeatTrackingProcessor, RNNBeatProcessor
 from madmom.features.key import CNNKeyRecognitionProcessor, key_prediction_to_label
 
-_Label = TypeVar("_Label")
+from app.chord_labels import parse_chord_cnn_lstm_label
 
 SAMPLE_RATE = 44100
 
-# ~1s at hopSize=2048/44100 (~0.046s/frame) — smooths frame-to-frame chord
-# flicker (very common on real, produced tracks; essentially absent on a
-# clean synthetic single-chord signal) without erasing genuine fast chord
-# changes. Tuned against 3 real songs (TON-017/ADR-037) — cut spurious
-# sub-300ms segments on one track from 58 down to 5.
-CHORD_SMOOTHING_WINDOW_FRAMES = 21
+# The vendored chord-cnn-lstm model (ADR-052) — a research codebase, not a
+# package, so it needs its own directory on sys.path. Some of its modules
+# also read data files with paths relative to the current working
+# directory at *import* time (not just call time), hence the chdir below —
+# mirrors ChordMiniApp's own integration of the same model.
+_VENDOR_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "vendor", "chord_cnn_lstm")
+)
+# Only the "submission" chord dictionary is vendored (best coverage of our
+# vocabulary — see apps/worker/vendor/chord_cnn_lstm/README.md).
+CHORD_DICT = "submission"
 
 
 @dataclass
@@ -25,17 +30,14 @@ class ChordSegment:
     end_time: float
     root: str
     chord_type: str
-
-
-def load_audio(path: str):
-    return es.MonoLoader(filename=path, sampleRate=SAMPLE_RATE)()
+    bass_note: str | None = None
 
 
 def extract_tempo(audio_path: str) -> float:
     # madmom (ADR-052): RNN beat-activation → DBN beat tracking, BPM from
-    # the median inter-beat interval. Works on a file path, not the
-    # essentia-loaded array — a different I/O contract from extract_chords
-    # below, which is why this takes audio_path while that takes audio.
+    # the median inter-beat interval. Works on a file path, not an
+    # in-memory array — same I/O contract as extract_key/extract_chords
+    # below (all three load the file themselves).
     beat_activation = RNNBeatProcessor()(audio_path)
     beats = DBNBeatTrackingProcessor(fps=100)(beat_activation)
 
@@ -54,65 +56,43 @@ def extract_key(audio_path: str) -> tuple[str, str]:
     return key, scale
 
 
-def extract_chords(audio) -> list[ChordSegment]:
-    frame_size = 4096
-    hop_size = 2048
+def extract_chords(audio_path: str) -> list[ChordSegment]:
+    # chord-cnn-lstm (ADR-052): CQT features → 5-model ensemble → HMM
+    # decoding, already segmented/smoothed by the model itself (unlike the
+    # previous Essentia pipeline — no extra frame-smoothing pass needed
+    # here). Writes a `start end label` .lab file; parsed below via
+    # chord_labels.parse_chord_cnn_lstm_label.
+    original_cwd = os.getcwd()
+    original_path = list(sys.path)
+    try:
+        sys.path.insert(0, _VENDOR_DIR)
+        os.chdir(_VENDOR_DIR)
+        from chord_recognition import chord_recognition
 
-    windowing = es.Windowing(type="blackmanharris62")
-    spectrum = es.Spectrum()
-    spectral_peaks = es.SpectralPeaks()
-    hpcp = es.HPCP()
-    chords_detection = es.ChordsDetection(hopSize=hop_size, sampleRate=SAMPLE_RATE)
+        with tempfile.NamedTemporaryFile(suffix=".lab", delete=False) as tmp:
+            lab_path = tmp.name
+        try:
+            success = chord_recognition(audio_path, lab_path, CHORD_DICT)
+            if not success:
+                raise RuntimeError("chord-cnn-lstm chord recognition failed")
+            return _parse_lab_file(lab_path)
+        finally:
+            os.unlink(lab_path)
+    finally:
+        os.chdir(original_cwd)
+        sys.path[:] = original_path
 
-    hpcp_frames = []
-    for frame in es.FrameGenerator(
-        audio, frameSize=frame_size, hopSize=hop_size, startFromZero=True
-    ):
-        windowed = windowing(frame)
-        spec = spectrum(windowed)
-        freqs, mags = spectral_peaks(spec)
-        hpcp_frames.append(hpcp(freqs, mags))
 
-    chord_labels, _strengths = chords_detection(hpcp_frames)
-    chord_labels = _smooth_labels(list(chord_labels), CHORD_SMOOTHING_WINDOW_FRAMES)
-
-    seconds_per_frame = hop_size / SAMPLE_RATE
-    segments: list[ChordSegment] = []
-    for index, label in enumerate(chord_labels):
-        root, chord_type = _parse_chord_label(label)
-        start = index * seconds_per_frame
-        end = start + seconds_per_frame
-
-        if (
-            segments
-            and segments[-1].root == root
-            and segments[-1].chord_type == chord_type
-        ):
-            segments[-1].end_time = end
-        else:
-            segments.append(ChordSegment(start, end, root, chord_type))
-
+def _parse_lab_file(lab_path: str) -> list[ChordSegment]:
+    segments = []
+    with open(lab_path) as f:
+        for line in f:
+            parts = line.strip().split("\t")
+            if len(parts) != 3:
+                continue
+            start_time, end_time, label = parts
+            root, chord_type, bass_note = parse_chord_cnn_lstm_label(label)
+            segments.append(
+                ChordSegment(float(start_time), float(end_time), root, chord_type, bass_note)
+            )
     return segments
-
-
-def _smooth_labels(labels: list[_Label], window: int) -> list[_Label]:
-    """Replace each label with the majority label in its surrounding
-    window — a standard denoising pass for frame-level chord recognition
-    (real tracks flicker between chords frame to frame far more than a
-    human would ever perceive as an actual chord change)."""
-    half = window // 2
-    smoothed = []
-    for index in range(len(labels)):
-        lo = max(0, index - half)
-        hi = min(len(labels), index + half + 1)
-        neighborhood = labels[lo:hi]
-        smoothed.append(Counter(neighborhood).most_common(1)[0][0])
-    return smoothed
-
-
-def _parse_chord_label(label: str) -> tuple[str, str]:
-    if label == "N":
-        return "N", "none"
-    if label.endswith("m"):
-        return label[:-1], "minor"
-    return label, "major"
