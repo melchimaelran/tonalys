@@ -1,12 +1,4 @@
-import numpy as np
-
-from app.analysis import (
-    _smooth_labels,
-    extract_chords,
-    extract_key,
-    extract_tempo,
-    load_audio,
-)
+from app.analysis import extract_chords, extract_key, extract_tempo
 
 
 def test_extract_tempo_detects_120bpm(c_major_120bpm_wav):
@@ -36,49 +28,33 @@ def test_extract_key_handles_near_silence_without_crashing(silent_wav):
 
 
 def test_extract_chords_detects_a_single_c_major_segment(c_major_120bpm_wav):
-    audio = load_audio(c_major_120bpm_wav)
+    segments = extract_chords(c_major_120bpm_wav)
 
-    segments = extract_chords(audio)
-
-    assert len(segments) == 1
-    assert segments[0].root == "C"
-    assert segments[0].chord_type == "major"
-    assert segments[0].start_time == 0.0
-    assert segments[0].end_time > 7.0
+    named_segments = [s for s in segments if s.chord_type != "none"]
+    assert len(named_segments) == 1
+    assert named_segments[0].root == "C"
+    assert named_segments[0].chord_type == "major"
+    assert named_segments[0].end_time - named_segments[0].start_time > 6.0
 
 
-def test_extract_chords_handles_empty_audio_without_crashing():
-    empty = np.zeros(0, dtype=np.float32)
+def test_extract_chords_handles_near_silence_without_crashing(silent_wav):
+    segments = extract_chords(silent_wav)
 
-    assert extract_chords(empty) == []
-
-
-def test_smooth_labels_removes_a_single_frame_flicker():
-    # A lone "G" flicker surrounded by "C" on both sides — the kind of
-    # frame-to-frame noise real (produced, multi-instrument) tracks
-    # trigger constantly, as opposed to the clean synthetic fixture above.
-    labels = ["C", "C", "C", "G", "C", "C", "C"]
-
-    smoothed = _smooth_labels(labels, window=5)
-
-    assert smoothed == ["C", "C", "C", "C", "C", "C", "C"]
+    assert all(isinstance(s.root, str) and s.root for s in segments)
 
 
-def test_smooth_labels_keeps_a_real_sustained_change():
-    labels = ["C", "C", "C", "G", "G", "G", "G", "G", "C", "C"]
+def test_extract_chords_detects_maj7_and_a_slash_chord(enriched_chords_wav):
+    # The two "enriched" chord qualities ADR-052 explicitly asks for
+    # beyond plain major/minor, run through the real model end to end
+    # (chord_labels.py's mapping itself is exhaustively covered in
+    # test_chord_labels.py — this proves the two are wired up correctly).
+    segments = extract_chords(enriched_chords_wav)
+    named_segments = [s for s in segments if s.chord_type != "none"]
 
-    smoothed = _smooth_labels(labels, window=3)
+    assert named_segments[0].root == "C"
+    assert named_segments[0].chord_type == "maj7"
+    assert named_segments[0].bass_note is None
 
-    assert smoothed == ["C", "C", "C", "G", "G", "G", "G", "G", "C", "C"]
-
-
-def test_extract_chords_handles_audio_shorter_than_one_frame_without_crashing():
-    # Shorter than frameSize (4096) — FrameGenerator zero-pads it into a
-    # single frame rather than yielding nothing, so this still produces
-    # a (low-confidence, effectively meaningless) result rather than an
-    # empty list. What matters here is that it doesn't crash.
-    too_short = np.zeros(100, dtype=np.float32)
-
-    segments = extract_chords(too_short)
-
-    assert len(segments) <= 1
+    assert named_segments[1].root == "C"
+    assert named_segments[1].chord_type == "major"
+    assert named_segments[1].bass_note == "E"

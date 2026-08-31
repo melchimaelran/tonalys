@@ -8,7 +8,7 @@ import aio_pika
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
-from app.analysis import extract_chords, extract_key, extract_tempo, load_audio
+from app.analysis import extract_chords, extract_key, extract_tempo
 from app.db import (
     get_audio_file_key,
     mark_analysis_complete,
@@ -55,8 +55,7 @@ async def handle_message(message: aio_pika.abc.AbstractIncomingMessage) -> None:
                 audio_path = download_audio(audio_key, tmp_dir)
                 tempo = extract_tempo(audio_path)
                 key, scale = extract_key(audio_path)
-                audio = load_audio(audio_path)
-                segments = extract_chords(audio)
+                segments = extract_chords(audio_path)
 
             save_chord_segments(track_id, segments)
             save_tempo_and_key(track_id, tempo, key, scale)

@@ -72,14 +72,34 @@ def test_save_chord_segments_inserts_a_row_per_segment(track_and_job):
     connection = psycopg2.connect(os.environ["DATABASE_URL"])
     with connection, connection.cursor() as cur:
         cur.execute(
-            "SELECT root, chord_type, start_time, end_time FROM chord_segments "
+            "SELECT root, chord_type, start_time, end_time, bass_note FROM chord_segments "
             "WHERE track_id = %s ORDER BY start_time",
             (track_id,),
         )
         rows = cur.fetchall()
     connection.close()
 
-    assert rows == [("C", "major", 0.0, 1.0), ("A", "minor", 1.0, 2.0)]
+    assert rows == [("C", "major", 0.0, 1.0, None), ("A", "minor", 1.0, 2.0, None)]
+
+
+def test_save_chord_segments_persists_the_bass_note_of_a_slash_chord(track_and_job):
+    track_id, _job_id, _audio_key = track_and_job
+    segments = [
+        ChordSegment(start_time=0.0, end_time=1.0, root="C", chord_type="major", bass_note="E"),
+    ]
+
+    save_chord_segments(track_id, segments)
+
+    connection = psycopg2.connect(os.environ["DATABASE_URL"])
+    with connection, connection.cursor() as cur:
+        cur.execute(
+            "SELECT bass_note FROM chord_segments WHERE track_id = %s",
+            (track_id,),
+        )
+        (bass_note,) = cur.fetchone()
+    connection.close()
+
+    assert bass_note == "E"
 
 
 def test_save_tempo_and_key_updates_the_track_row(track_and_job):

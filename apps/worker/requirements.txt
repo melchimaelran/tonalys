@@ -1,6 +1,5 @@
 fastapi
 uvicorn[standard]
-essentia
 # No PyPI release; pinned to a commit for reproducibility (ADR-052).
 madmom @ git+https://github.com/CPJKU/madmom@27f032e8947204902c675e5e341a3faf5dc86dae
 aio-pika
@@ -8,3 +7,16 @@ python-dotenv
 psycopg2-binary
 minio
 yt-dlp
+
+# chord-cnn-lstm (ADR-052, apps/worker/vendor/chord_cnn_lstm) runtime deps.
+# Install torch FIRST via the CPU-only index — the default PyPI wheel
+# bundles CUDA and is much larger, and `pip install -r` alone can't be
+# trusted to prefer the CPU build:
+#   pip install --index-url https://download.pytorch.org/whl/cpu torch
+# then this file as usual (torch already satisfied, no re-resolve).
+torch
+librosa
+pretty_midi
+h5py
+joblib
+pydub
