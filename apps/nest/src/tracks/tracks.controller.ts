@@ -164,7 +164,13 @@ export class TracksController {
   async getTrack(@Param('id') id: string) {
     const track = await this.prismaService.track.findUnique({
       where: { id },
-      select: { id: true, title: true },
+      select: {
+        id: true,
+        title: true,
+        tempoBpm: true,
+        keyRoot: true,
+        keyScale: true,
+      },
     });
 
     if (!track) {

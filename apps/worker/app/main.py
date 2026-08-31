@@ -8,13 +8,14 @@ import aio_pika
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
-from app.analysis import extract_chords, load_audio
+from app.analysis import extract_chords, extract_key, extract_tempo, load_audio
 from app.db import (
     get_audio_file_key,
     mark_analysis_complete,
     mark_analysis_failed,
     mark_analysis_processing,
     save_chord_segments,
+    save_tempo_and_key,
 )
 from app.storage import download_audio
 from app.youtube import get_video_info
@@ -52,10 +53,13 @@ async def handle_message(message: aio_pika.abc.AbstractIncomingMessage) -> None:
 
             with tempfile.TemporaryDirectory() as tmp_dir:
                 audio_path = download_audio(audio_key, tmp_dir)
+                tempo = extract_tempo(audio_path)
+                key, scale = extract_key(audio_path)
                 audio = load_audio(audio_path)
                 segments = extract_chords(audio)
 
             save_chord_segments(track_id, segments)
+            save_tempo_and_key(track_id, tempo, key, scale)
             mark_analysis_complete(track_id, job_id)
         except Exception as error:
             print(f"Failed to process message: {error}", flush=True)

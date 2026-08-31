@@ -221,15 +221,50 @@ describe('TracksController', () => {
     prismaService.track.findUnique.mockResolvedValue({
       id: 'track-1',
       title: 'My Song.mp3',
+      tempoBpm: null,
+      keyRoot: null,
+      keyScale: null,
     });
 
     const result = await controller.getTrack('track-1');
 
     expect(prismaService.track.findUnique).toHaveBeenCalledWith({
       where: { id: 'track-1' },
-      select: { id: true, title: true },
+      select: {
+        id: true,
+        title: true,
+        tempoBpm: true,
+        keyRoot: true,
+        keyScale: true,
+      },
     });
-    expect(result).toEqual({ id: 'track-1', title: 'My Song.mp3' });
+    expect(result).toEqual({
+      id: 'track-1',
+      title: 'My Song.mp3',
+      tempoBpm: null,
+      keyRoot: null,
+      keyScale: null,
+    });
+  });
+
+  it('returns the analyzed tempo and key once available', async () => {
+    prismaService.track.findUnique.mockResolvedValue({
+      id: 'track-1',
+      title: 'My Song.mp3',
+      tempoBpm: 120,
+      keyRoot: 'C',
+      keyScale: 'major',
+    });
+
+    const result = await controller.getTrack('track-1');
+
+    expect(result).toEqual({
+      id: 'track-1',
+      title: 'My Song.mp3',
+      tempoBpm: 120,
+      keyRoot: 'C',
+      keyScale: 'major',
+    });
   });
 
   it('throws NotFoundException for getTrack when the track does not exist', async () => {

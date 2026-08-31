@@ -11,6 +11,7 @@ from app.db import (
     mark_analysis_failed,
     mark_analysis_processing,
     save_chord_segments,
+    save_tempo_and_key,
 )
 
 
@@ -79,6 +80,23 @@ def test_save_chord_segments_inserts_a_row_per_segment(track_and_job):
     connection.close()
 
     assert rows == [("C", "major", 0.0, 1.0), ("A", "minor", 1.0, 2.0)]
+
+
+def test_save_tempo_and_key_updates_the_track_row(track_and_job):
+    track_id, _job_id, _audio_key = track_and_job
+
+    save_tempo_and_key(track_id, 120.0, "C", "major")
+
+    connection = psycopg2.connect(os.environ["DATABASE_URL"])
+    with connection, connection.cursor() as cur:
+        cur.execute(
+            "SELECT tempo_bpm, key_root, key_scale FROM tracks WHERE id = %s",
+            (track_id,),
+        )
+        row = cur.fetchone()
+    connection.close()
+
+    assert row == (120.0, "C", "major")
 
 
 def test_mark_analysis_processing_marks_job_and_track_processing(track_and_job):

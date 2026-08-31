@@ -41,6 +41,9 @@ model Track {
   durationSeconds Float?          @map("duration_seconds")
   audioFileKey    String?         @map("audio_file_key")
   status          TrackStatus     @default(PENDING)
+  tempoBpm        Float?          @map("tempo_bpm")
+  keyRoot         String?         @map("key_root")
+  keyScale        String?         @map("key_scale")
   createdAt       DateTime        @default(now()) @map("created_at")
 
   chordSegments ChordSegment[]

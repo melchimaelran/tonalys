@@ -1,6 +1,8 @@
 fastapi
 uvicorn[standard]
 essentia
+# No PyPI release; pinned to a commit for reproducibility (ADR-052).
+madmom @ git+https://github.com/CPJKU/madmom@27f032e8947204902c675e5e341a3faf5dc86dae
 aio-pika
 python-dotenv
 psycopg2-binary
