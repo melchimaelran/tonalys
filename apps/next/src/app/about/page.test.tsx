@@ -43,4 +43,12 @@ describe("AboutPage", () => {
     );
     expect(linkedin).toHaveAttribute("rel", "noopener noreferrer");
   });
+
+  it("links to WhatsApp", () => {
+    render(<AboutPage />);
+
+    const whatsapp = screen.getByRole("link", { name: /whatsapp/i });
+    expect(whatsapp).toHaveAttribute("href", "https://wa.me/261387817393");
+    expect(whatsapp).toHaveAttribute("rel", "noopener noreferrer");
+  });
 });

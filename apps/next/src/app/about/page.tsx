@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { GithubLogo, LinkedinLogo } from "@phosphor-icons/react/dist/ssr";
+import { GithubLogo, LinkedinLogo, WhatsappLogo } from "@phosphor-icons/react/dist/ssr";
 
 const GITHUB_URL = "https://github.com/melchimaelran/tonalys";
 const LINKEDIN_URL = "https://www.linkedin.com/in/melchimael-roeh-429ab6210/";
+const WHATSAPP_URL = "https://wa.me/261387817393";
 
 export const metadata: Metadata = {
   title: "About — Tonalys",
@@ -118,6 +119,15 @@ export default function AboutPage() {
             >
               <LinkedinLogo aria-hidden className="size-4" />
               LinkedIn — Melchimael Roeh
+            </a>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-foreground hover:underline"
+            >
+              <WhatsappLogo aria-hidden className="size-4" />
+              WhatsApp
             </a>
           </div>
         </Section>
