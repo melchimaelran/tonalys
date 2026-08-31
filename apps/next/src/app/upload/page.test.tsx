@@ -16,6 +16,8 @@ function renderPage() {
 
 describe("UploadPage", () => {
   beforeEach(() => {
+    window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
+    window.HTMLMediaElement.prototype.pause = vi.fn();
     vi.stubGlobal("fetch", vi.fn());
   });
 
@@ -178,6 +180,53 @@ describe("UploadPage", () => {
 
     await waitFor(() =>
       expect(screen.getByText(/analysis service unavailable/i)).toBeInTheDocument(),
+    );
+  });
+
+  it("shows the track title, a play control and a link to the track once analysis is done", async () => {
+    vi.mocked(fetch).mockImplementation((input) => {
+      const url = String(input);
+      if (url === "/api/upload") {
+        return Promise.resolve(
+          new Response(JSON.stringify({ id: "track-1", jobId: "job-1" }), { status: 201 }),
+        );
+      }
+      if (url === "/api/jobs/job-1") {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              id: "job-1",
+              trackId: "track-1",
+              status: "DONE",
+              errorMessage: null,
+            }),
+            { status: 200 },
+          ),
+        );
+      }
+      if (url === "/api/tracks/track-1") {
+        return Promise.resolve(
+          new Response(JSON.stringify({ id: "track-1", title: "My Song.mp3" }), { status: 200 }),
+        );
+      }
+      return Promise.resolve(new Response(JSON.stringify({}), { status: 200 }));
+    });
+    renderPage();
+    const file = new File(["audio"], "track.mp3", { type: "audio/mpeg" });
+    fireEvent.change(screen.getByLabelText(/drag and drop an audio file/i), {
+      target: { files: [file] },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /upload/i }));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("job-status")).toHaveTextContent(/analysis complete/i),
+    );
+    expect(await screen.findByText("My Song.mp3")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /play/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /open/i })).toHaveAttribute(
+      "href",
+      "/tracks/track-1",
     );
   });
 
