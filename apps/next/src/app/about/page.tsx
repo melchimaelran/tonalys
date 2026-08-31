@@ -13,7 +13,9 @@ export const metadata: Metadata = {
 const STACK = [
   "Next.js (App Router)",
   "NestJS",
-  "Python + Essentia",
+  "Python",
+  "madmom",
+  "chord-cnn-lstm",
   "PostgreSQL",
   "Redis",
   "RabbitMQ",
@@ -56,9 +58,9 @@ export default function AboutPage() {
           <p>
             An upload or YouTube link creates a track and an analysis job. The
             job is queued over RabbitMQ; a Python worker downloads or reads the
-            audio, runs chord/tempo/key detection with Essentia, and writes the
-            results back. The frontend polls the job and then renders the chords
-            synced to playback.
+            audio, runs tempo/key detection with madmom and chord recognition
+            with chord-cnn-lstm, and writes the results back. The frontend
+            polls the job and then renders the chords synced to playback.
           </p>
           <p className="flex flex-wrap gap-1.5">
             {STACK.map((tech) => (
@@ -77,6 +79,23 @@ export default function AboutPage() {
             YouTube audio extraction is provided for personal use only. Tonalys
             is single-user, gated behind authentication, and has no public
             sharing of analyzed tracks.
+          </p>
+        </Section>
+
+        <Section title="Model licensing">
+          <p>
+            Tempo and key detection use{" "}
+            <a
+              href="https://github.com/CPJKU/madmom"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground underline underline-offset-4"
+            >
+              madmom
+            </a>
+            , whose pretrained model weights are licensed CC BY-NC-SA
+            (non-commercial). Tonalys is personal use and an unmonetized
+            portfolio piece, not a commercial product.
           </p>
         </Section>
 

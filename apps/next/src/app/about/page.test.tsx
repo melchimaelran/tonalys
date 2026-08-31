@@ -12,6 +12,23 @@ describe("AboutPage", () => {
     expect(screen.getByRole("heading", { name: /how it works/i })).toBeInTheDocument();
   });
 
+  it("lists the current analysis stack, not the retired Essentia engine", () => {
+    render(<AboutPage />);
+
+    expect(screen.getAllByText("madmom").length).toBeGreaterThan(0);
+    expect(screen.getByText("chord-cnn-lstm")).toBeInTheDocument();
+    expect(screen.queryByText(/essentia/i)).not.toBeInTheDocument();
+  });
+
+  it("notes the non-commercial license on madmom's model weights", () => {
+    render(<AboutPage />);
+
+    expect(
+      screen.getByRole("heading", { name: /model licensing/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/CC BY-NC-SA/)).toBeInTheDocument();
+  });
+
   it("links to the GitHub repository and LinkedIn profile", () => {
     render(<AboutPage />);
 
