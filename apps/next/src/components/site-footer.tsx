@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { GithubLogo, LinkedinLogo } from "@phosphor-icons/react";
+import { GithubLogo, LinkedinLogo, WhatsappLogo } from "@phosphor-icons/react";
 import { TonalysLogo } from "@/components/tonalys-logo";
 
 const GITHUB_URL = "https://github.com/melchimaelran/tonalys";
 const LINKEDIN_URL = "https://www.linkedin.com/in/melchimael-roeh-429ab6210/";
+const WHATSAPP_URL = "https://wa.me/261387817393";
 
 export function SiteFooter() {
   const pathname = usePathname();
@@ -43,6 +44,15 @@ export function SiteFooter() {
             className="transition-colors hover:text-foreground"
           >
             <LinkedinLogo aria-hidden className="size-4" />
+          </a>
+          <a
+            href={WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="WhatsApp"
+            className="transition-colors hover:text-foreground"
+          >
+            <WhatsappLogo aria-hidden className="size-4" />
           </a>
         </div>
       </div>

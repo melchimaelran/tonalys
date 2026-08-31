@@ -4,13 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { GithubLogo, LinkedinLogo, List, SignOut, X } from "@phosphor-icons/react";
+import { GithubLogo, LinkedinLogo, List, SignOut, WhatsappLogo, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { TonalysLogo } from "@/components/tonalys-logo";
 import { cn } from "@/lib/utils";
 
 const GITHUB_URL = "https://github.com/melchimaelran/tonalys";
 const LINKEDIN_URL = "https://www.linkedin.com/in/melchimael-roeh-429ab6210/";
+const WHATSAPP_URL = "https://wa.me/261387817393";
 
 const NAV_LINKS = [
   { href: "/", label: "Library" },
@@ -87,6 +88,15 @@ export function SiteNavbar() {
             className="p-1.5 text-muted-foreground transition-colors hover:text-foreground"
           >
             <LinkedinLogo aria-hidden className="size-4" />
+          </a>
+          <a
+            href={WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="WhatsApp"
+            className="p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <WhatsappLogo aria-hidden className="size-4" />
           </a>
           <Button
             variant="ghost"
