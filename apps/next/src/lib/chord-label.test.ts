@@ -17,4 +17,8 @@ describe("formatChordLabel", () => {
   it("does not add a slash when the bass note is null", () => {
     expect(formatChordLabel({ root: "C", chordType: "major", bassNote: null })).toBe("C major");
   });
+
+  it('shows a placeholder instead of "N none" for a no-chord segment', () => {
+    expect(formatChordLabel({ root: "N", chordType: "none" })).toBe("—");
+  });
 });
