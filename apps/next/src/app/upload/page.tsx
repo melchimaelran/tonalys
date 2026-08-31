@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FileArrowUp, UploadSimple, YoutubeLogo } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AnalysisComplete } from "@/components/analysis-complete";
 import { AnalysisStatus } from "@/components/analysis-status";
 import { BackLink } from "@/components/back-link";
 import { UploadDropzone } from "@/components/upload-dropzone";
@@ -19,6 +19,7 @@ interface SubmitResponse {
 }
 
 export default function UploadPage() {
+  const router = useRouter();
   const [source, setSource] = useState<Source>("file");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -26,6 +27,17 @@ export default function UploadPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const jobStatus = useJobStatus(jobId);
+
+  useEffect(() => {
+    if (jobStatus.data?.status === "DONE") {
+      router.push(`/tracks/${jobStatus.data.trackId}`);
+    }
+  }, [jobStatus.data?.status, jobStatus.data?.trackId, router]);
+
+  function resetJob() {
+    setJobId(null);
+    setSubmitError(null);
+  }
 
   function handleSourceChange(next: Source) {
     setSource(next);
@@ -86,18 +98,21 @@ export default function UploadPage() {
         <CardContent className="flex flex-col gap-4">
           {jobId ? (
             jobStatus.isError ? (
-              <p data-testid="job-status-error" className="text-sm text-destructive">
-                Lost track of this job&apos;s status — please refresh
-              </p>
+              <div data-testid="job-status-error" className="flex flex-col items-center gap-3">
+                <p className="text-sm text-destructive">
+                  Lost track of this job&apos;s status — please refresh
+                </p>
+                <Button type="button" variant="outline" size="sm" onClick={resetJob}>
+                  Try again
+                </Button>
+              </div>
             ) : jobStatus.data ? (
               <div data-testid="job-status" className="flex flex-col items-center gap-4">
                 <AnalysisStatus
                   status={jobStatus.data.status}
                   errorMessage={jobStatus.data.errorMessage}
+                  onRetry={resetJob}
                 />
-                {jobStatus.data.status === "DONE" && (
-                  <AnalysisComplete trackId={jobStatus.data.trackId} />
-                )}
               </div>
             ) : (
               <p data-testid="job-status" className="text-sm text-muted-foreground">

@@ -4,6 +4,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import UploadPage from "./page";
 
+const push = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push }),
+}));
+
 function renderPage() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -16,8 +21,7 @@ function renderPage() {
 
 describe("UploadPage", () => {
   beforeEach(() => {
-    window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
-    window.HTMLMediaElement.prototype.pause = vi.fn();
+    push.mockClear();
     vi.stubGlobal("fetch", vi.fn());
   });
 
@@ -101,7 +105,7 @@ describe("UploadPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /upload/i }));
 
     await waitFor(() =>
-      expect(screen.getByTestId("job-status")).toHaveTextContent(/waiting to start/i),
+      expect(screen.getByTestId("job-status")).toHaveTextContent(/detecting tempo/i),
     );
     const [uploadUrl, uploadInit] = vi
       .mocked(fetch)
@@ -157,7 +161,7 @@ describe("UploadPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /analyze/i }));
 
     await waitFor(() =>
-      expect(screen.getByTestId("job-status")).toHaveTextContent(/waiting to start/i),
+      expect(screen.getByTestId("job-status")).toHaveTextContent(/detecting tempo/i),
     );
     const [youtubeUrl, youtubeInit] = vi
       .mocked(fetch)
@@ -183,7 +187,7 @@ describe("UploadPage", () => {
     );
   });
 
-  it("shows the track title, a play control and a link to the track once analysis is done", async () => {
+  it("redirects to the track page once analysis is done", async () => {
     vi.mocked(fetch).mockImplementation((input) => {
       const url = String(input);
       if (url === "/api/upload") {
@@ -204,11 +208,6 @@ describe("UploadPage", () => {
           ),
         );
       }
-      if (url === "/api/tracks/track-1") {
-        return Promise.resolve(
-          new Response(JSON.stringify({ id: "track-1", title: "My Song.mp3" }), { status: 200 }),
-        );
-      }
       return Promise.resolve(new Response(JSON.stringify({}), { status: 200 }));
     });
     renderPage();
@@ -219,18 +218,44 @@ describe("UploadPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /upload/i }));
 
-    await waitFor(() =>
-      expect(screen.getByTestId("job-status")).toHaveTextContent(/analysis complete/i),
-    );
-    expect(await screen.findByText("My Song.mp3")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /play/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /open/i })).toHaveAttribute(
-      "href",
-      "/tracks/track-1",
-    );
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/tracks/track-1"));
   });
 
-  it("shows an error instead of an indefinite loading state when polling fails", async () => {
+  it("returns to the form when retrying after an ERROR job status", async () => {
+    vi.mocked(fetch).mockImplementation((input) => {
+      const url = String(input);
+      if (url === "/api/upload") {
+        return Promise.resolve(
+          new Response(JSON.stringify({ id: "track-1", jobId: "job-1" }), { status: 201 }),
+        );
+      }
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            id: "job-1",
+            trackId: "track-1",
+            status: "ERROR",
+            errorMessage: "Analysis failed",
+          }),
+          { status: 200 },
+        ),
+      );
+    });
+    renderPage();
+    const file = new File(["audio"], "track.mp3", { type: "audio/mpeg" });
+    fireEvent.change(screen.getByLabelText(/drag and drop an audio file/i), {
+      target: { files: [file] },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /upload/i }));
+
+    await waitFor(() => expect(screen.getByText(/analysis failed/i)).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /try again/i }));
+
+    expect(screen.getByText(/drag and drop an audio file/i)).toBeInTheDocument();
+  });
+
+  it("shows an error instead of an indefinite loading state when polling fails, with a retry that returns to the form", async () => {
     vi.mocked(fetch).mockImplementation((input) => {
       const url = String(input);
       if (url === "/api/upload") {
@@ -250,5 +275,10 @@ describe("UploadPage", () => {
 
     await waitFor(() => expect(screen.getByTestId("job-status-error")).toBeInTheDocument());
     expect(screen.queryByTestId("job-status")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /try again/i }));
+
+    expect(screen.queryByTestId("job-status-error")).not.toBeInTheDocument();
+    expect(screen.getByText(/drag and drop an audio file/i)).toBeInTheDocument();
   });
 });
