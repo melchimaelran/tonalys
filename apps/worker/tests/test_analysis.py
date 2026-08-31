@@ -10,20 +10,29 @@ from app.analysis import (
 
 
 def test_extract_tempo_detects_120bpm(c_major_120bpm_wav):
-    audio = load_audio(c_major_120bpm_wav)
-
-    tempo = extract_tempo(audio)
+    tempo = extract_tempo(c_major_120bpm_wav)
 
     assert 115 <= tempo <= 125
 
 
-def test_extract_key_detects_c_major(c_major_120bpm_wav):
-    audio = load_audio(c_major_120bpm_wav)
+def test_extract_tempo_handles_near_silence_without_crashing(silent_wav):
+    tempo = extract_tempo(silent_wav)
 
-    key, scale = extract_key(audio)
+    assert tempo >= 0.0
+
+
+def test_extract_key_detects_c_major(c_major_120bpm_wav):
+    key, scale = extract_key(c_major_120bpm_wav)
 
     assert key == "C"
     assert scale == "major"
+
+
+def test_extract_key_handles_near_silence_without_crashing(silent_wav):
+    key, scale = extract_key(silent_wav)
+
+    assert isinstance(key, str) and key
+    assert scale in ("major", "minor")
 
 
 def test_extract_chords_detects_a_single_c_major_segment(c_major_120bpm_wav):

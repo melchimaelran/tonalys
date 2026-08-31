@@ -48,6 +48,14 @@ def save_chord_segments(track_id: str, segments: list[ChordSegment]) -> None:
             )
 
 
+def save_tempo_and_key(track_id: str, tempo_bpm: float, key: str, scale: str) -> None:
+    with _cursor() as cur:
+        cur.execute(
+            "UPDATE tracks SET tempo_bpm = %s, key_root = %s, key_scale = %s WHERE id = %s",
+            (tempo_bpm, key, scale, track_id),
+        )
+
+
 def mark_analysis_processing(track_id: str, job_id: str) -> None:
     with _cursor() as cur:
         cur.execute("UPDATE analysis_jobs SET status = 'PROCESSING' WHERE id = %s", (job_id,))

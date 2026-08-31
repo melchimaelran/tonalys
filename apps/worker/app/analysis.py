@@ -3,6 +3,9 @@ from dataclasses import dataclass
 from typing import TypeVar
 
 import essentia.standard as es
+import numpy as np
+from madmom.features.beats import DBNBeatTrackingProcessor, RNNBeatProcessor
+from madmom.features.key import CNNKeyRecognitionProcessor, key_prediction_to_label
 
 _Label = TypeVar("_Label")
 
@@ -28,13 +31,26 @@ def load_audio(path: str):
     return es.MonoLoader(filename=path, sampleRate=SAMPLE_RATE)()
 
 
-def extract_tempo(audio) -> float:
-    bpm, _ticks, _confidence, _estimates, _intervals = es.RhythmExtractor2013()(audio)
-    return float(bpm)
+def extract_tempo(audio_path: str) -> float:
+    # madmom (ADR-052): RNN beat-activation → DBN beat tracking, BPM from
+    # the median inter-beat interval. Works on a file path, not the
+    # essentia-loaded array — a different I/O contract from extract_chords
+    # below, which is why this takes audio_path while that takes audio.
+    beat_activation = RNNBeatProcessor()(audio_path)
+    beats = DBNBeatTrackingProcessor(fps=100)(beat_activation)
+
+    if len(beats) < 2:
+        return 0.0
+
+    median_interval = float(np.median(np.diff(beats)))
+    return 60.0 / median_interval if median_interval > 0 else 0.0
 
 
-def extract_key(audio) -> tuple[str, str]:
-    key, scale, _strength = es.KeyExtractor()(audio)
+def extract_key(audio_path: str) -> tuple[str, str]:
+    # madmom (ADR-052): CNN key classifier over 24 labels (e.g. "C major").
+    prediction = CNNKeyRecognitionProcessor()(audio_path)
+    label = key_prediction_to_label(prediction)
+    key, scale = label.rsplit(" ", 1)
     return key, scale
 
 

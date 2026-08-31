@@ -25,3 +25,17 @@ def c_major_120bpm_wav(tmp_path):
     es.MonoWriter(filename=str(path), sampleRate=SAMPLE_RATE)(signal.astype(np.float32))
 
     return str(path)
+
+
+@pytest.fixture
+def silent_wav(tmp_path):
+    """A short silent clip — exercises the tempo/key edge case where a
+    beat/key model finds essentially nothing to work with, without
+    crashing."""
+    duration = 2
+    signal = np.zeros(int(SAMPLE_RATE * duration), dtype=np.float32)
+
+    path = tmp_path / "silent.wav"
+    es.MonoWriter(filename=str(path), sampleRate=SAMPLE_RATE)(signal)
+
+    return str(path)

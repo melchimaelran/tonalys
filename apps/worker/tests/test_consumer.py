@@ -137,14 +137,20 @@ def test_worker_consumes_a_job_writes_chord_segments_and_marks_it_done(
 
     connection = psycopg2.connect(os.environ["DATABASE_URL"])
     with connection, connection.cursor() as cur:
-        cur.execute("SELECT status FROM tracks WHERE id = %s", (track_id,))
-        (track_status,) = cur.fetchone()
+        cur.execute(
+            "SELECT status, tempo_bpm, key_root, key_scale FROM tracks WHERE id = %s",
+            (track_id,),
+        )
+        track_status, tempo_bpm, key_root, key_scale = cur.fetchone()
         cur.execute("SELECT count(*) FROM chord_segments WHERE track_id = %s", (track_id,))
         (segment_count,) = cur.fetchone()
     connection.close()
 
     assert track_status == "READY"
     assert segment_count >= 1
+    assert tempo_bpm is not None
+    assert key_root is not None
+    assert key_scale in ("major", "minor")
 
 
 def test_worker_logs_and_rejects_a_malformed_message(capfd):
