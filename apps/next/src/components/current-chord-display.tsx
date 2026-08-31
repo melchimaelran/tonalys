@@ -15,7 +15,7 @@ export function CurrentChordDisplay({
   const clampedProgress = Math.min(1, Math.max(0, progress));
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex w-full items-center gap-2">
       <div className="relative flex-1 overflow-hidden rounded-md border border-border bg-muted/40">
         <div
           data-testid="chord-progress-fill"
