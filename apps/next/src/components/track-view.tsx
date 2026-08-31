@@ -8,11 +8,14 @@ import { ChordEditForm } from "@/components/chord-edit-form";
 import { CurrentChordDisplay } from "@/components/current-chord-display";
 import { GuitarChordDiagram } from "@/components/guitar-chord-diagram";
 import { PianoKeyboard } from "@/components/piano-keyboard";
+import { UpcomingChords } from "@/components/upcoming-chords";
 import { useTrack } from "@/hooks/use-track";
 import { useTrackChords } from "@/hooks/use-track-chords";
 import { useUpdateChordSegment } from "@/hooks/use-update-chord-segment";
+import { formatChordLabel } from "@/lib/chord-label";
 import { getChordNotes } from "@/lib/chord-notes";
-import { findChordAtTime } from "@/lib/find-chord-at-time";
+import { computeChordProgress } from "@/lib/chord-progress";
+import { findChordAtTime, findUpcomingChords, type ChordSegment } from "@/lib/find-chord-at-time";
 import { getGuitarChordShape } from "@/lib/guitar-chord-shape";
 import { transposeRoot } from "@/lib/notes";
 
@@ -20,6 +23,23 @@ type ChordView = "piano" | "guitar";
 
 const CAPO_POSITIONS = [0, 1, 2, 3, 4, 5, 6, 7];
 const TRANSPOSE_POSITIONS = [-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6];
+const UPCOMING_CHORDS_COUNT = 4;
+
+// Transpose (piano) and capo (guitar) are plain visual shifts of the
+// displayed name — never touch audio. A capo on fret N makes the shape you
+// finger sound N semitones higher, so to sound the actual chord, look up
+// the shape transposed DOWN by the capo position.
+function resolveTransposedChord(
+  chord: ChordSegment,
+  view: ChordView,
+  capo: number,
+  transpose: number,
+): { root: string; bassNote?: string | null } {
+  const shift = view === "guitar" ? -capo : transpose;
+  const root = transposeRoot(chord.root, shift) || chord.root;
+  const bassNote = chord.bassNote ? transposeRoot(chord.bassNote, shift) || chord.bassNote : chord.bassNote;
+  return { root, bassNote };
+}
 
 export interface TrackViewProps {
   trackId: string;
@@ -35,34 +55,28 @@ export function TrackView({ trackId }: TrackViewProps) {
   const chords = useTrackChords(trackId);
   const updateChordSegment = useUpdateChordSegment(trackId);
   const currentChord = findChordAtTime(chords.data ?? [], currentTime);
-  // Transpose is a plain visual shift of the displayed name/notes — never
-  // touches audio.
-  const pianoLookupRoot = currentChord
-    ? transposeRoot(currentChord.root, transpose) || currentChord.root
-    : "";
-  const pianoLookupBassNote = currentChord?.bassNote
-    ? transposeRoot(currentChord.bassNote, transpose) || currentChord.bassNote
-    : currentChord?.bassNote;
-  const highlightedNotes = currentChord
-    ? getChordNotes(pianoLookupRoot, currentChord.chordType)
+  const pianoLookup = currentChord ? resolveTransposedChord(currentChord, "piano", capo, transpose) : null;
+  const highlightedNotes = currentChord && pianoLookup
+    ? getChordNotes(pianoLookup.root, currentChord.chordType)
     : [];
-  // A capo on fret N makes the shape you finger sound N semitones higher —
-  // so to sound the actual chord, look up the shape transposed DOWN by the
-  // capo position. Purely a different lookup name; never touches audio.
-  const guitarLookupRoot = currentChord ? transposeRoot(currentChord.root, -capo) || currentChord.root : "";
-  const guitarLookupBassNote = currentChord?.bassNote
-    ? transposeRoot(currentChord.bassNote, -capo) || currentChord.bassNote
-    : currentChord?.bassNote;
-  const guitarShape = currentChord
-    ? getGuitarChordShape(guitarLookupRoot, currentChord.chordType, guitarLookupBassNote)
-    : null;
+  const guitarLookup = currentChord ? resolveTransposedChord(currentChord, "guitar", capo, transpose) : null;
+  const guitarShape =
+    currentChord && guitarLookup
+      ? getGuitarChordShape(guitarLookup.root, currentChord.chordType, guitarLookup.bassNote)
+      : null;
   const displayedChord = currentChord
-    ? {
-        ...currentChord,
-        root: view === "guitar" ? guitarLookupRoot : pianoLookupRoot,
-        bassNote: view === "guitar" ? guitarLookupBassNote : pianoLookupBassNote,
-      }
+    ? { ...currentChord, ...resolveTransposedChord(currentChord, view, capo, transpose) }
     : currentChord;
+  const progress = currentChord ? computeChordProgress(currentChord, currentTime) : 0;
+  const durationSeconds = currentChord
+    ? Math.round(currentChord.endTime - currentChord.startTime)
+    : undefined;
+  const upcomingChords = findUpcomingChords(chords.data ?? [], currentTime, UPCOMING_CHORDS_COUNT).map(
+    (chord) => ({
+      id: chord.id,
+      label: formatChordLabel({ ...resolveTransposedChord(chord, view, capo, transpose), chordType: chord.chordType }),
+    }),
+  );
 
   return (
     <div className="flex w-full max-w-2xl flex-col items-center gap-6">
@@ -87,19 +101,22 @@ export function TrackView({ trackId }: TrackViewProps) {
           )}
         </div>
       ) : (
-        <div className="flex items-center gap-2">
-          <CurrentChordDisplay chord={displayedChord} />
-          {currentChord && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => setIsEditing(true)}
-            >
-              <PencilSimple data-icon="inline-start" aria-hidden />
-              Edit
-            </Button>
-          )}
+        <div className="flex w-full flex-col items-center gap-2">
+          <div className="flex w-full items-center gap-2">
+            <CurrentChordDisplay chord={displayedChord} progress={progress} durationSeconds={durationSeconds} />
+            {currentChord && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setIsEditing(true)}
+              >
+                <PencilSimple data-icon="inline-start" aria-hidden />
+                Edit
+              </Button>
+            )}
+          </div>
+          <UpcomingChords chords={upcomingChords} />
         </div>
       )}
       <div className="flex gap-2" role="tablist" aria-label="Chord view">

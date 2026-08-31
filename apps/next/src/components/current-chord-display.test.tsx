@@ -35,4 +35,40 @@ describe("CurrentChordDisplay", () => {
 
     expect(screen.getByText("C major")).toBeInTheDocument();
   });
+
+  it("shows a duration label when durationSeconds is given", () => {
+    render(<CurrentChordDisplay chord={chord} durationSeconds={3} />);
+
+    expect(screen.getByText("3s")).toBeInTheDocument();
+  });
+
+  it("shows no duration label when durationSeconds is omitted", () => {
+    render(<CurrentChordDisplay chord={chord} />);
+
+    expect(screen.queryByText(/s$/)).not.toBeInTheDocument();
+  });
+
+  it("shows no duration label when there is no chord", () => {
+    render(<CurrentChordDisplay chord={null} durationSeconds={3} />);
+
+    expect(screen.queryByText("3s")).not.toBeInTheDocument();
+  });
+
+  it("sizes the progress fill to the given progress", () => {
+    render(<CurrentChordDisplay chord={chord} progress={0.4} />);
+
+    expect(screen.getByTestId("chord-progress-fill")).toHaveStyle({ width: "40%" });
+  });
+
+  it("clamps progress below 0 to 0%", () => {
+    render(<CurrentChordDisplay chord={chord} progress={-0.2} />);
+
+    expect(screen.getByTestId("chord-progress-fill")).toHaveStyle({ width: "0%" });
+  });
+
+  it("clamps progress above 1 to 100%", () => {
+    render(<CurrentChordDisplay chord={chord} progress={1.5} />);
+
+    expect(screen.getByTestId("chord-progress-fill")).toHaveStyle({ width: "100%" });
+  });
 });
