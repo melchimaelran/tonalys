@@ -94,8 +94,8 @@ export default function AboutPage() {
               madmom
             </a>
             , whose pretrained model weights are licensed CC BY-NC-SA
-            (non-commercial). Tonalys is personal use and an unmonetized
-            portfolio piece, not a commercial product.
+            (non-commercial). Tonalys is personal, unmonetized, not a
+            commercial product.
           </p>
         </Section>
 
