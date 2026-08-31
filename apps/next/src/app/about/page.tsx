@@ -52,22 +52,6 @@ export default function AboutPage() {
           </p>
         </header>
 
-        <Section title="Why it exists">
-          <p>Tonalys serves three purposes at once:</p>
-          <ul className="list-disc pl-5">
-            <li>a real personal tool for learning songs by ear;</li>
-            <li>
-              a public portfolio piece showing a transparent analysis pipeline —
-              upload → queue → worker → result — rather than a commercial black
-              box;
-            </li>
-            <li>
-              a learning vehicle for Docker/Compose, the full test pyramid,
-              Next.js, NestJS and Claude Code subagents.
-            </li>
-          </ul>
-        </Section>
-
         <Section title="How it works">
           <p>
             An upload or YouTube link creates a track and an analysis job. The
