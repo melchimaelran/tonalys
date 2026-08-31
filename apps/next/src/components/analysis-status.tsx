@@ -62,12 +62,14 @@ export function AnalysisStatus({ status, errorMessage, onRetry }: AnalysisStatus
       {PHASES.map((phase, index) => (
         <div key={phase.label} className="flex items-center gap-2">
           {index < activePhase && (
-            <CheckCircle weight="fill" className="size-4 shrink-0 text-emerald-600" />
+            <CheckCircle aria-hidden weight="fill" className="size-4 shrink-0 text-emerald-600" />
           )}
           {index === activePhase && (
-            <CircleNotch className="size-4 shrink-0 animate-spin text-foreground" />
+            <CircleNotch aria-hidden className="size-4 shrink-0 animate-spin text-foreground" />
           )}
-          {index > activePhase && <Circle className="size-4 shrink-0 text-muted-foreground" />}
+          {index > activePhase && (
+            <Circle aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+          )}
           <p
             className={
               index === activePhase
