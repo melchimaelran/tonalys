@@ -26,6 +26,10 @@ describe("SiteFooter", () => {
       "https://www.linkedin.com/in/melchimael-roeh-429ab6210/",
     );
     expect(linkedin).toHaveAttribute("rel", "noopener noreferrer");
+
+    const whatsapp = screen.getByRole("link", { name: /whatsapp/i });
+    expect(whatsapp).toHaveAttribute("href", "https://wa.me/261387817393");
+    expect(whatsapp).toHaveAttribute("rel", "noopener noreferrer");
   });
 
   it("links to the About page", () => {
