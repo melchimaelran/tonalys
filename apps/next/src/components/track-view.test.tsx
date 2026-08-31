@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { TrackView } from "./track-view";
@@ -385,5 +385,160 @@ describe("TrackView", () => {
     renderTrackView("track-1");
 
     expect(await screen.findByRole("heading", { name: "My Song.mp3" })).toBeInTheDocument();
+  });
+
+  it("shows up to the next 4 upcoming chords below the current chord, in order", async () => {
+    const chords = [
+      { id: "seg-1", startTime: 0, endTime: 2, root: "C", chordType: "major" },
+      { id: "seg-2", startTime: 2, endTime: 4, root: "D", chordType: "major" },
+      { id: "seg-3", startTime: 4, endTime: 6, root: "E", chordType: "major" },
+      { id: "seg-4", startTime: 6, endTime: 8, root: "F", chordType: "major" },
+      { id: "seg-5", startTime: 8, endTime: 10, root: "G", chordType: "major" },
+    ];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    renderTrackView("track-1");
+    await screen.findByText("C major");
+
+    const list = screen.getByRole("list", { name: /upcoming chords/i });
+    const items = within(list).getAllByRole("listitem");
+    expect(items.map((item) => item.textContent)).toEqual([
+      "D major",
+      "E major",
+      "F major",
+      "G major",
+    ]);
+  });
+
+  it("shows fewer than 4 upcoming chords when fewer remain", async () => {
+    const chords = [
+      { id: "seg-1", startTime: 0, endTime: 2, root: "C", chordType: "major" },
+      { id: "seg-2", startTime: 2, endTime: 4, root: "D", chordType: "major" },
+    ];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    renderTrackView("track-1");
+    await screen.findByText("C major");
+
+    const list = screen.getByRole("list", { name: /upcoming chords/i });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(1);
+  });
+
+  it("shows no upcoming chords list when none remain", async () => {
+    const chords = [{ id: "seg-1", startTime: 0, endTime: 2, root: "C", chordType: "major" }];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    renderTrackView("track-1");
+    await screen.findByText("C major");
+
+    expect(screen.queryByRole("list", { name: /upcoming chords/i })).not.toBeInTheDocument();
+  });
+
+  it("shifts the upcoming chords list forward as playback crosses a chord boundary", async () => {
+    const chords = [
+      { id: "seg-1", startTime: 0, endTime: 2, root: "C", chordType: "major" },
+      { id: "seg-2", startTime: 2, endTime: 4, root: "D", chordType: "major" },
+      { id: "seg-3", startTime: 4, endTime: 6, root: "E", chordType: "major" },
+      { id: "seg-4", startTime: 6, endTime: 8, root: "F", chordType: "major" },
+      { id: "seg-5", startTime: 8, endTime: 10, root: "G", chordType: "major" },
+    ];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    const { container } = renderTrackView("track-1");
+    await screen.findByText("C major");
+
+    const audio = container.querySelector("audio") as HTMLAudioElement;
+    Object.defineProperty(audio, "currentTime", { value: 3, configurable: true });
+    fireEvent.timeUpdate(audio);
+    await screen.findByText("D major");
+
+    const list = screen.getByRole("list", { name: /upcoming chords/i });
+    const items = within(list).getAllByRole("listitem");
+    expect(items.map((item) => item.textContent)).toEqual(["E major", "F major", "G major"]);
+  });
+
+  it("grows the current chord's progress fill as playback advances within its window", async () => {
+    const chords = [{ id: "seg-1", startTime: 0, endTime: 2, root: "C", chordType: "major" }];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    const { container } = renderTrackView("track-1");
+    await screen.findByText("C major");
+    expect(screen.getByTestId("chord-progress-fill")).toHaveStyle({ width: "0%" });
+
+    const audio = container.querySelector("audio") as HTMLAudioElement;
+    Object.defineProperty(audio, "currentTime", { value: 1, configurable: true });
+    fireEvent.timeUpdate(audio);
+
+    expect(screen.getByTestId("chord-progress-fill")).toHaveStyle({ width: "50%" });
+  });
+
+  it("shows a static duration label for the current chord that doesn't change within the same chord", async () => {
+    const chords = [{ id: "seg-1", startTime: 0, endTime: 2, root: "C", chordType: "major" }];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    const { container } = renderTrackView("track-1");
+    await screen.findByText("C major");
+    expect(screen.getByText("2s")).toBeInTheDocument();
+
+    const audio = container.querySelector("audio") as HTMLAudioElement;
+    Object.defineProperty(audio, "currentTime", { value: 1, configurable: true });
+    fireEvent.timeUpdate(audio);
+
+    expect(screen.getByText("2s")).toBeInTheDocument();
+  });
+
+  it("transposes the upcoming chord labels consistently with the current chord", async () => {
+    const chords = [
+      { id: "seg-1", startTime: 0, endTime: 2, root: "C", chordType: "major" },
+      { id: "seg-2", startTime: 2, endTime: 4, root: "G", chordType: "major" },
+    ];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    renderTrackView("track-1");
+    await screen.findByText("C major");
+
+    fireEvent.change(screen.getByRole("combobox", { name: /transpose/i }), {
+      target: { value: "2" },
+    });
+
+    expect(screen.getByText("D major")).toBeInTheDocument();
+    const list = screen.getByRole("list", { name: /upcoming chords/i });
+    expect(within(list).getByRole("listitem")).toHaveTextContent("A major");
+  });
+
+  it("shifts the upcoming chord labels consistently with the current chord when the capo changes", async () => {
+    const chords = [
+      { id: "seg-1", startTime: 0, endTime: 2, root: "D", chordType: "major" },
+      { id: "seg-2", startTime: 2, endTime: 4, root: "A", chordType: "major" },
+    ];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    renderTrackView("track-1");
+    await screen.findByText("D major");
+    fireEvent.click(screen.getByRole("tab", { name: /guitar/i }));
+
+    fireEvent.change(screen.getByRole("combobox", { name: /capo/i }), {
+      target: { value: "2" },
+    });
+
+    expect(screen.getByText("C major")).toBeInTheDocument();
+    const list = screen.getByRole("list", { name: /upcoming chords/i });
+    expect(within(list).getByRole("listitem")).toHaveTextContent("G major");
   });
 });

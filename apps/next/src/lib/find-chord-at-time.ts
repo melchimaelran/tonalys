@@ -13,3 +13,14 @@ export function findChordAtTime(
 ): ChordSegment | null {
   return segments.find((segment) => time >= segment.startTime && time < segment.endTime) ?? null;
 }
+
+export function findUpcomingChords(
+  segments: ChordSegment[],
+  time: number,
+  count: number,
+): ChordSegment[] {
+  return [...segments]
+    .sort((a, b) => a.startTime - b.startTime)
+    .filter((segment) => segment.startTime > time)
+    .slice(0, count);
+}
