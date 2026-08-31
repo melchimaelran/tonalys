@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FileArrowUp, UploadSimple, YoutubeLogo } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnalysisComplete } from "@/components/analysis-complete";
 import { AnalysisStatus } from "@/components/analysis-status";
 import { BackLink } from "@/components/back-link";
 import { UploadDropzone } from "@/components/upload-dropzone";
@@ -89,11 +90,14 @@ export default function UploadPage() {
                 Lost track of this job&apos;s status — please refresh
               </p>
             ) : jobStatus.data ? (
-              <div data-testid="job-status">
+              <div data-testid="job-status" className="flex flex-col items-center gap-4">
                 <AnalysisStatus
                   status={jobStatus.data.status}
                   errorMessage={jobStatus.data.errorMessage}
                 />
+                {jobStatus.data.status === "DONE" && (
+                  <AnalysisComplete trackId={jobStatus.data.trackId} />
+                )}
               </div>
             ) : (
               <p data-testid="job-status" className="text-sm text-muted-foreground">
