@@ -255,7 +255,7 @@ export default function UploadPage() {
                     )}
                   </>
                 ) : (
-                  <YoutubeLinkForm onUrlSubmitted={submitYoutubeUrl} />
+                  <YoutubeLinkForm onUrlSubmitted={submitYoutubeUrl} isSubmitting={isSubmitting} />
                 )}
 
                 {submitError && (

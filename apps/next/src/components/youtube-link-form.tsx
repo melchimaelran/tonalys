@@ -16,9 +16,10 @@ export function isValidYoutubeUrl(url: string): boolean {
 
 interface YoutubeLinkFormProps {
   onUrlSubmitted?: (url: string) => void;
+  isSubmitting?: boolean;
 }
 
-export function YoutubeLinkForm({ onUrlSubmitted }: YoutubeLinkFormProps) {
+export function YoutubeLinkForm({ onUrlSubmitted, isSubmitting = false }: YoutubeLinkFormProps) {
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -56,9 +57,9 @@ export function YoutubeLinkForm({ onUrlSubmitted }: YoutubeLinkFormProps) {
         aria-invalid={error ? true : undefined}
       />
       {error && <p className="text-xs text-destructive">{error}</p>}
-      <Button type="submit">
+      <Button type="submit" disabled={isSubmitting}>
         <MagnifyingGlass data-icon="inline-start" aria-hidden />
-        Analyze
+        {isSubmitting ? "Analyzing…" : "Analyze"}
       </Button>
     </form>
   );

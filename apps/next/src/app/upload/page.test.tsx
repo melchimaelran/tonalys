@@ -208,6 +208,30 @@ describe("UploadPage", () => {
     );
   });
 
+  it("disables the YouTube submit button and shows a loading label while the request is in flight", async () => {
+    let resolveUpload: (value: Response) => void = () => {};
+    vi.mocked(fetch).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveUpload = resolve;
+        }),
+    );
+    renderPage();
+    fireEvent.click(screen.getByRole("tab", { name: /youtube link/i }));
+    fireEvent.change(screen.getByLabelText(/youtube link/i), {
+      target: { value: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /analyze/i }));
+
+    const button = await screen.findByRole("button", { name: /analyzing/i });
+    expect(button).toBeDisabled();
+
+    resolveUpload(
+      new Response(JSON.stringify({ id: "track-1", jobId: "job-1" }), { status: 201 }),
+    );
+  });
+
   it("shows an error when the analysis service is unreachable", async () => {
     vi.mocked(fetch).mockRejectedValue(new Error("fetch failed"));
     renderPage();

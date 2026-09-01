@@ -13,7 +13,7 @@ export default async function TrackPage({
       <div className="w-full max-w-2xl">
         <BackLink href="/" label="Home" />
       </div>
-      <div className="flex flex-1 items-center justify-center">
+      <div className="flex flex-1 items-center justify-center w-full">
         <TrackView trackId={id} />
       </div>
     </div>
