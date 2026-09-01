@@ -224,3 +224,4 @@ Built by **Melchimael Roeh**.
 
 - GitHub — https://github.com/melchimaelran/tonalys
 - LinkedIn — https://www.linkedin.com/in/melchimael-roeh-429ab6210/
+- WhatsApp — https://wa.me/261387817393
