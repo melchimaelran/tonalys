@@ -80,118 +80,116 @@ export function TrackView({ trackId }: TrackViewProps) {
   );
 
   return (
-    <div className="flex w-full flex-col items-center gap-6">
-      <div className="flex w-full max-w-2xl flex-col items-center gap-6">
-        {track.data && <h1 className="text-lg font-semibold">{track.data.title}</h1>}
-        {isEditing && currentChord ? (
-          <div className="flex flex-col items-center gap-1">
-            <ChordEditForm
-              root={currentChord.root}
-              chordType={currentChord.chordType}
-              bassNote={currentChord.bassNote}
-              isSaving={updateChordSegment.isPending}
-              onSave={(root, chordType, bassNote) => {
-                updateChordSegment.mutate(
-                  { segmentId: currentChord.id, root, chordType, bassNote },
-                  { onSuccess: () => setIsEditing(false) },
-                );
-              }}
-              onCancel={() => setIsEditing(false)}
-            />
-            {updateChordSegment.isError && (
-              <p className="text-xs text-destructive">{updateChordSegment.error.message}</p>
+    <div className="flex w-full max-w-2xl flex-col items-center gap-6">
+      {track.data && <h1 className="text-lg font-semibold">{track.data.title}</h1>}
+      {isEditing && currentChord ? (
+        <div className="flex flex-col items-center gap-1">
+          <ChordEditForm
+            root={currentChord.root}
+            chordType={currentChord.chordType}
+            bassNote={currentChord.bassNote}
+            isSaving={updateChordSegment.isPending}
+            onSave={(root, chordType, bassNote) => {
+              updateChordSegment.mutate(
+                { segmentId: currentChord.id, root, chordType, bassNote },
+                { onSuccess: () => setIsEditing(false) },
+              );
+            }}
+            onCancel={() => setIsEditing(false)}
+          />
+          {updateChordSegment.isError && (
+            <p className="text-xs text-destructive">{updateChordSegment.error.message}</p>
+          )}
+        </div>
+      ) : (
+        <div className="flex w-full flex-col items-center gap-2">
+          <div className="flex w-full items-center gap-2">
+            <CurrentChordDisplay chord={displayedChord} progress={progress} durationSeconds={durationSeconds} />
+            {currentChord && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setIsEditing(true)}
+              >
+                <PencilSimple data-icon="inline-start" aria-hidden />
+                Edit
+              </Button>
             )}
           </div>
-        ) : (
-          <div className="flex w-full flex-col items-center gap-2">
-            <div className="flex w-full items-center gap-2">
-              <CurrentChordDisplay chord={displayedChord} progress={progress} durationSeconds={durationSeconds} />
-              {currentChord && (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIsEditing(true)}
-                >
-                  <PencilSimple data-icon="inline-start" aria-hidden />
-                  Edit
-                </Button>
-              )}
-            </div>
-            <UpcomingChords chords={upcomingChords} />
-          </div>
-        )}
-        <div className="flex gap-2" role="tablist" aria-label="Chord view">
-          <Button
-            type="button"
-            variant={view === "piano" ? "default" : "outline"}
-            size="sm"
-            role="tab"
-            aria-selected={view === "piano"}
-            onClick={() => setView("piano")}
-          >
-            Piano
-          </Button>
-          <Button
-            type="button"
-            variant={view === "guitar" ? "default" : "outline"}
-            size="sm"
-            role="tab"
-            aria-selected={view === "guitar"}
-            onClick={() => setView("guitar")}
-          >
-            Guitar
-          </Button>
+          <UpcomingChords chords={upcomingChords} />
         </div>
-        {view === "piano" ? (
-          <div className="flex w-full flex-col items-center gap-2">
-            <div className="flex items-center gap-2">
-              <label
-                htmlFor="transpose-select"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Transpose
-              </label>
-              <select
-                id="transpose-select"
-                aria-label="Transpose"
-                value={transpose}
-                onChange={(event) => setTranspose(Number(event.target.value))}
-                className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground shadow-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-              >
-                {TRANSPOSE_POSITIONS.map((position) => (
-                  <option key={position} value={position}>
-                    {position > 0 ? `+${position}` : position}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <PianoKeyboard highlightedNotes={highlightedNotes} />
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-2">
-            <div className="flex items-center gap-2">
-              <label htmlFor="capo-select" className="text-xs font-medium text-muted-foreground">
-                Capo
-              </label>
-              <select
-                id="capo-select"
-                aria-label="Capo"
-                value={capo}
-                onChange={(event) => setCapo(Number(event.target.value))}
-                className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground shadow-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
-              >
-                {CAPO_POSITIONS.map((position) => (
-                  <option key={position} value={position}>
-                    {position}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <GuitarChordDiagram shape={guitarShape} />
-          </div>
-        )}
+      )}
+      <div className="flex gap-2" role="tablist" aria-label="Chord view">
+        <Button
+          type="button"
+          variant={view === "piano" ? "default" : "outline"}
+          size="sm"
+          role="tab"
+          aria-selected={view === "piano"}
+          onClick={() => setView("piano")}
+        >
+          Piano
+        </Button>
+        <Button
+          type="button"
+          variant={view === "guitar" ? "default" : "outline"}
+          size="sm"
+          role="tab"
+          aria-selected={view === "guitar"}
+          onClick={() => setView("guitar")}
+        >
+          Guitar
+        </Button>
       </div>
+      {view === "piano" ? (
+        <div className="flex w-full flex-col items-center gap-2">
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="transpose-select"
+              className="text-xs font-medium text-muted-foreground"
+            >
+              Transpose
+            </label>
+            <select
+              id="transpose-select"
+              aria-label="Transpose"
+              value={transpose}
+              onChange={(event) => setTranspose(Number(event.target.value))}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground shadow-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
+            >
+              {TRANSPOSE_POSITIONS.map((position) => (
+                <option key={position} value={position}>
+                  {position > 0 ? `+${position}` : position}
+                </option>
+              ))}
+            </select>
+          </div>
+          <PianoKeyboard highlightedNotes={highlightedNotes} />
+        </div>
+      ) : (
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex items-center gap-2">
+            <label htmlFor="capo-select" className="text-xs font-medium text-muted-foreground">
+              Capo
+            </label>
+            <select
+              id="capo-select"
+              aria-label="Capo"
+              value={capo}
+              onChange={(event) => setCapo(Number(event.target.value))}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground shadow-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
+            >
+              {CAPO_POSITIONS.map((position) => (
+                <option key={position} value={position}>
+                  {position}
+                </option>
+              ))}
+            </select>
+          </div>
+          <GuitarChordDiagram shape={guitarShape} />
+        </div>
+      )}
       <AudioPlayer src={`/api/tracks/${trackId}/audio`} onTimeUpdate={setCurrentTime} />
     </div>
   );
