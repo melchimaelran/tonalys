@@ -1,20 +1,38 @@
+# AI / editor tooling — kept out of the repo
 /project
 .claude
 CLAUDE.md
+AGENTS.md
 .agents
 .windsurf
 skills-lock.json
+.vscode/
+.idea/
 
+# Dependencies & build output
 node_modules/
-.env
-.env.local
 dist/
 .next/
 .turbo/
-*.log
+*.tsbuildinfo
 
-.vscode/
+# Env — only *.env.example files are tracked
+.env
+.env.local
 
+# Python
 .venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+
+# Test / coverage
+coverage/
+
+# Logs & OS / editor junk
+*.log
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
