@@ -89,6 +89,20 @@ describe("YoutubeLinkForm", () => {
     expect(onUrlSubmitted).toHaveBeenCalledWith("https://youtu.be/dQw4w9WgXcQ");
   });
 
+  it("disables the submit button and shows a loading label while submitting", () => {
+    render(<YoutubeLinkForm onUrlSubmitted={vi.fn()} isSubmitting />);
+
+    const button = screen.getByRole("button", { name: /analyzing/i });
+    expect(button).toBeDisabled();
+  });
+
+  it("keeps the submit button enabled and labeled Analyze when not submitting", () => {
+    render(<YoutubeLinkForm onUrlSubmitted={vi.fn()} isSubmitting={false} />);
+
+    const button = screen.getByRole("button", { name: /^analyze$/i });
+    expect(button).not.toBeDisabled();
+  });
+
   it("clears a previous error once a valid URL is submitted", () => {
     const onUrlSubmitted = vi.fn();
     render(<YoutubeLinkForm onUrlSubmitted={onUrlSubmitted} />);
