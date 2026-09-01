@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 export interface AnalysisStatusProps {
   status: "PENDING" | "PROCESSING" | "DONE" | "ERROR";
   errorMessage: string | null;
+  // How many analyses (running + queued ahead) sit before this one. 0 once
+  // the worker has picked this job up. While > 0 the queue view is shown
+  // instead of the simulated phase list.
+  queuePosition?: number;
   onRetry?: () => void;
 }
 
@@ -20,11 +24,18 @@ const PHASES = [
   { label: "Transcribing chords", durationMs: 5000 },
 ] as const;
 
-export function AnalysisStatus({ status, errorMessage, onRetry }: AnalysisStatusProps) {
+export function AnalysisStatus({
+  status,
+  errorMessage,
+  queuePosition = 0,
+  onRetry,
+}: AnalysisStatusProps) {
   const [activePhase, setActivePhase] = useState(0);
+  const queued = status === "PENDING" && queuePosition > 0;
 
   useEffect(() => {
     if (status === "DONE" || status === "ERROR") return;
+    if (queued) return;
     if (activePhase >= PHASES.length - 1) return;
 
     const timeoutId = setTimeout(() => {
@@ -32,7 +43,7 @@ export function AnalysisStatus({ status, errorMessage, onRetry }: AnalysisStatus
     }, PHASES[activePhase].durationMs);
 
     return () => clearTimeout(timeoutId);
-  }, [activePhase, status]);
+  }, [activePhase, status, queued]);
 
   if (status === "ERROR") {
     return (
@@ -53,6 +64,17 @@ export function AnalysisStatus({ status, errorMessage, onRetry }: AnalysisStatus
       <div role="status" className="flex items-center gap-3">
         <CheckCircle aria-hidden weight="fill" className="size-5 text-emerald-600" />
         <p className="text-sm">Analysis complete — opening your track...</p>
+      </div>
+    );
+  }
+
+  if (queued) {
+    return (
+      <div role="status" aria-live="polite" className="flex items-center gap-3">
+        <CircleNotch aria-hidden className="size-4 shrink-0 animate-spin text-foreground" />
+        <p className="text-sm text-muted-foreground">
+          Waiting in queue — position {queuePosition}
+        </p>
       </div>
     );
   }

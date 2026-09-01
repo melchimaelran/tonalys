@@ -1,5 +1,6 @@
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
@@ -17,6 +18,7 @@ describe('JwtAuthGuard', () => {
   let guard: JwtAuthGuard;
   let jwtService: JwtService;
   let reflector: Reflector;
+  let configService: ConfigService;
   let verifySpy: jest.Mock;
 
   beforeEach(() => {
@@ -25,7 +27,10 @@ describe('JwtAuthGuard', () => {
     reflector = {
       getAllAndOverride: jest.fn().mockReturnValue(false),
     } as unknown as Reflector;
-    guard = new JwtAuthGuard(jwtService, reflector);
+    configService = {
+      get: jest.fn().mockReturnValue('true'),
+    } as unknown as ConfigService;
+    guard = new JwtAuthGuard(jwtService, reflector, configService);
   });
 
   it('throws UnauthorizedException when no Authorization header is present', () => {
@@ -52,6 +57,14 @@ describe('JwtAuthGuard', () => {
 
   it('returns true without checking the token when the route is marked @Public()', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(true);
+    const context = createContext();
+
+    expect(guard.canActivate(context)).toBe(true);
+    expect(verifySpy).not.toHaveBeenCalled();
+  });
+
+  it('returns true without a token when AUTH_ENABLED is "false"', () => {
+    jest.spyOn(configService, 'get').mockReturnValue('false');
     const context = createContext();
 
     expect(guard.canActivate(context)).toBe(true);

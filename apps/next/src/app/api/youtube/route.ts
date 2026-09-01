@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveApiAuth } from "@/lib/api-auth";
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get("token")?.value;
-  if (!token) {
-    return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+  const auth = resolveApiAuth(request);
+  if (!auth.ok) {
+    return auth.response;
   }
 
   let body: unknown;
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
   try {
     nestResponse = await fetch(`${process.env.NEST_API_URL}/youtube`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json", ...auth.authHeaders },
       body: JSON.stringify(body),
     });
   } catch {

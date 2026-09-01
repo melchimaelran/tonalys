@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileArrowUp, UploadSimple, YoutubeLogo } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,36 @@ export default function UploadPage() {
       router.push(`/tracks/${jobStatus.data.trackId}`);
     }
   }, [jobStatus.data?.status, jobStatus.data?.trackId, router]);
+
+  // Abandoning the page mid-analysis cancels the job: the server hard-deletes
+  // the track + audio and the worker bails between phases. Covers closing the
+  // tab / navigating away (pagehide) and leaving this route (unmount). A job
+  // that has already finished or errored is left alone.
+  const cancelRef = useRef<{ jobId: string | null; active: boolean }>({
+    jobId: null,
+    active: false,
+  });
+  const jobStatusValue = jobStatus.data?.status;
+
+  useEffect(() => {
+    const done = jobStatusValue === "DONE" || jobStatusValue === "ERROR";
+    cancelRef.current = { jobId, active: jobId !== null && !done };
+  }, [jobId, jobStatusValue]);
+
+  useEffect(() => {
+    function cancelIfAbandoned() {
+      const { jobId: id, active } = cancelRef.current;
+      if (id && active && typeof navigator !== "undefined" && navigator.sendBeacon) {
+        navigator.sendBeacon(`/api/jobs/${id}/cancel`);
+      }
+    }
+
+    window.addEventListener("pagehide", cancelIfAbandoned);
+    return () => {
+      window.removeEventListener("pagehide", cancelIfAbandoned);
+      cancelIfAbandoned();
+    };
+  }, []);
 
   function resetJob() {
     setJobId(null);
@@ -111,6 +141,7 @@ export default function UploadPage() {
                 <AnalysisStatus
                   status={jobStatus.data.status}
                   errorMessage={jobStatus.data.errorMessage}
+                  queuePosition={jobStatus.data.queuePosition}
                   onRetry={resetJob}
                 />
               </div>

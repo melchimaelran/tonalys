@@ -1,31 +1,20 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
 import { SiteNavbar } from "./site-navbar";
 
 let mockPathname = "/";
-const push = vi.fn();
 
 vi.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
-  useRouter: () => ({ push }),
 }));
 
 function renderNavbar() {
-  const queryClient = new QueryClient();
-  function Wrapper({ children }: { children: ReactNode }) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
-  }
-  return render(<SiteNavbar />, { wrapper: Wrapper });
+  return render(<SiteNavbar />);
 }
 
 describe("SiteNavbar", () => {
   beforeEach(() => {
     mockPathname = "/";
-    push.mockClear();
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
   });
 
   it("renders the primary nav links", () => {
@@ -79,13 +68,9 @@ describe("SiteNavbar", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("signs out: clears the session and navigates to /login", async () => {
-    const user = userEvent.setup();
+  it("has no sign-out control", () => {
     renderNavbar();
 
-    await user.click(screen.getByRole("button", { name: /sign out/i }));
-
-    expect(fetch).toHaveBeenCalledWith("/api/logout", { method: "POST" });
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/login"));
+    expect(screen.queryByRole("button", { name: /sign out/i })).toBeNull();
   });
 });

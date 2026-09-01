@@ -21,6 +21,11 @@ function isTokenExpired(token: string): boolean {
 }
 
 export function proxy(request: NextRequest) {
+  // Temporary public access: every route is open, no cookie required.
+  if (process.env.AUTH_ENABLED === "false") {
+    return NextResponse.next();
+  }
+
   if (PUBLIC_PATHS.includes(request.nextUrl.pathname)) {
     return NextResponse.next();
   }

@@ -173,18 +173,19 @@ def test_worker_logs_and_rejects_a_malformed_message(capfd):
     assert "Failed to process message" in captured.out
 
 
-def test_worker_logs_and_rejects_a_job_for_an_unknown_track(capfd):
-    # Same shared-queue caveat as the tests above. No Track/AnalysisJob
-    # rows exist for these ids, so there's nothing in the DB to mark
-    # failed — just the log line.
+def test_worker_acks_and_skips_a_job_whose_track_no_longer_exists(capfd):
+    # Same shared-queue caveat as the tests above. No Track/AnalysisJob rows
+    # exist for these ids — the shape left behind when the user closes the
+    # page and the API hard-deletes the track. The worker treats it as a
+    # cancellation: ack and move on, no ERROR recorded.
     _publish({"trackId": str(uuid.uuid4()), "jobId": str(uuid.uuid4())})
 
     with TestClient(app):
         time.sleep(2)
 
     captured = capfd.readouterr()
-    assert "Failed to process message" in captured.out
-    assert "unknown track" in captured.out
+    assert "Job cancelled" in captured.out
+    assert "Failed to process message" not in captured.out
 
 
 def test_worker_marks_the_job_and_track_error_when_analysis_fails(job_with_missing_audio):

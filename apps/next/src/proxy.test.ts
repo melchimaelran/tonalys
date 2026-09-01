@@ -78,4 +78,12 @@ describe("proxy", () => {
 
     expect(response.headers.get("location")).toBeNull();
   });
+
+  it("lets every route through without a cookie when AUTH_ENABLED is 'false'", () => {
+    vi.stubEnv("AUTH_ENABLED", "false");
+
+    const response = proxy(makeRequest("/upload"));
+
+    expect(response.headers.get("location")).toBeNull();
+  });
 });

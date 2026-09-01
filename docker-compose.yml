@@ -63,6 +63,7 @@ services:
       target: runner
     environment:
       NEST_API_URL: http://nest:3001
+      AUTH_ENABLED: ${AUTH_ENABLED:-true}
     ports:
       - "3000:3000"
     healthcheck:
@@ -87,6 +88,7 @@ services:
       RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
       JWT_SECRET: ${JWT_SECRET}
       AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH}
+      AUTH_ENABLED: ${AUTH_ENABLED:-true}
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}

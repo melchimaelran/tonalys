@@ -20,6 +20,7 @@ function jobStatus(overrides: Partial<JobStatus> = {}): JobStatus {
     trackId: "track-1",
     status: "PENDING",
     errorMessage: null,
+    queuePosition: 0,
     ...overrides,
   };
 }
@@ -56,6 +57,18 @@ describe("useJobStatus", () => {
 
     await waitFor(() => expect(result.current.data?.status).toBe("PENDING"));
     expect(fetch).toHaveBeenCalledWith("/api/jobs/job-1");
+  });
+
+  it("surfaces the queue position from the response", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify(jobStatus({ queuePosition: 4 })), { status: 200 }),
+    );
+
+    const { result } = renderHook(() => useJobStatus("job-1"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.data?.queuePosition).toBe(4));
   });
 
   it("does not fetch when jobId is null", () => {

@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { IS_PUBLIC_KEY } from './public.decorator';
@@ -14,9 +15,17 @@ export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     private readonly reflector: Reflector,
+    private readonly configService: ConfigService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
+    // Temporary public access: when auth is switched off, every route is
+    // open. The module, decorator and login endpoint stay in place —
+    // flip AUTH_ENABLED back to "true" and this returns to normal.
+    if (this.configService.get<string>('AUTH_ENABLED') === 'false') {
+      return true;
+    }
+
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),

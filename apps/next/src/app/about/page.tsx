@@ -78,8 +78,9 @@ export default function AboutPage() {
         <Section title="A note on YouTube">
           <p>
             YouTube audio extraction is provided for personal use only. Tonalys
-            is single-user, gated behind authentication, and has no public
-            sharing of analyzed tracks.
+            is a single-user project with no public sharing of analyzed tracks.
+            Access is normally behind a login; it may be opened without one for
+            short periods, with a small daily cap on new analyses.
           </p>
         </Section>
 

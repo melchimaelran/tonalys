@@ -5,6 +5,8 @@ export interface JobStatus {
   trackId: string;
   status: "PENDING" | "PROCESSING" | "DONE" | "ERROR";
   errorMessage: string | null;
+  // Running + queued-ahead analyses before this one; 0 once picked up.
+  queuePosition: number;
 }
 
 export const POLL_INTERVAL_MS = 2000;

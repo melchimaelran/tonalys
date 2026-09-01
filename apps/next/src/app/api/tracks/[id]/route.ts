@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveApiAuth } from "@/lib/api-auth";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const token = request.cookies.get("token")?.value;
-  if (!token) {
-    return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+  const auth = resolveApiAuth(request);
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const { id } = await params;
@@ -14,7 +15,7 @@ export async function GET(
   let nestResponse: Response;
   try {
     nestResponse = await fetch(`${process.env.NEST_API_URL}/tracks/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: auth.authHeaders,
     });
   } catch {
     return NextResponse.json({ message: "Analysis service unavailable" }, { status: 502 });

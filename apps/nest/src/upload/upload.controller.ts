@@ -3,6 +3,7 @@ import {
   Controller,
   Post,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -11,6 +12,7 @@ import { extname } from 'node:path';
 import { StorageService } from '../storage/storage.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
+import { DailyQuotaGuard } from '../quota/daily-quota.guard';
 
 // Matches the client-side limit (apps/next's UploadDropzone, TON-011) —
 // server-side enforcement too, since the client check is trivially
@@ -18,6 +20,7 @@ import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 
 @Controller('upload')
+@UseGuards(DailyQuotaGuard)
 export class UploadController {
   constructor(
     private readonly storageService: StorageService,

@@ -14,6 +14,7 @@ function makeContext(id: string) {
 
 describe("GET /api/jobs/[id]", () => {
   beforeEach(() => {
+    vi.unstubAllEnvs();
     vi.stubEnv("NEST_API_URL", "http://nest-test:3001");
     vi.stubGlobal("fetch", vi.fn());
   });
@@ -22,6 +23,28 @@ describe("GET /api/jobs/[id]", () => {
     const response = await GET(makeRequest(), makeContext("job-1"));
 
     expect(response.status).toBe(401);
+  });
+
+  it("forwards without an Authorization header when AUTH_ENABLED is 'false'", async () => {
+    vi.stubEnv("AUTH_ENABLED", "false");
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          id: "job-1",
+          trackId: "track-1",
+          status: "PROCESSING",
+          errorMessage: null,
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const response = await GET(makeRequest(), makeContext("job-1"));
+
+    expect(fetch).toHaveBeenCalledWith("http://nest-test:3001/jobs/job-1", {
+      headers: {},
+    });
+    expect(response.status).toBe(200);
   });
 
   it("forwards the token and job id to nest, returning the job status", async () => {

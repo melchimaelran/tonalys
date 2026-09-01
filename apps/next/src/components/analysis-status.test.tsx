@@ -18,6 +18,29 @@ describe("AnalysisStatus", () => {
     expect(screen.getByText("Detecting tempo")).toBeInTheDocument();
   });
 
+  it("shows the queue position instead of phases when PENDING and behind other jobs", () => {
+    render(
+      <AnalysisStatus status="PENDING" errorMessage={null} queuePosition={3} />,
+    );
+
+    expect(screen.getByText(/position 3/i)).toBeInTheDocument();
+    expect(screen.queryByText("Detecting tempo")).not.toBeInTheDocument();
+  });
+
+  it("switches from the queue view to the phase list once processing starts", () => {
+    const { rerender } = render(
+      <AnalysisStatus status="PENDING" errorMessage={null} queuePosition={1} />,
+    );
+    expect(screen.getByText(/position 1/i)).toBeInTheDocument();
+
+    rerender(
+      <AnalysisStatus status="PROCESSING" errorMessage={null} queuePosition={0} />,
+    );
+
+    expect(screen.getByText("Detecting tempo")).toBeInTheDocument();
+    expect(screen.queryByText(/position/i)).not.toBeInTheDocument();
+  });
+
   it("advances to the next phase after the first phase's duration elapses", () => {
     render(<AnalysisStatus status="PROCESSING" errorMessage={null} />);
 

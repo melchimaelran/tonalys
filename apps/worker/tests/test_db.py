@@ -12,6 +12,7 @@ from app.db import (
     mark_analysis_processing,
     save_chord_segments,
     save_tempo_and_key,
+    track_exists,
 )
 
 
@@ -58,6 +59,16 @@ def test_get_audio_file_key_returns_the_stored_key(track_and_job):
 
 def test_get_audio_file_key_returns_none_for_an_unknown_track():
     assert get_audio_file_key(str(uuid.uuid4())) is None
+
+
+def test_track_exists_is_true_for_a_present_track(track_and_job):
+    track_id, _job_id, _audio_key = track_and_job
+
+    assert track_exists(track_id) is True
+
+
+def test_track_exists_is_false_once_the_track_is_gone():
+    assert track_exists(str(uuid.uuid4())) is False
 
 
 def test_save_chord_segments_inserts_a_row_per_segment(track_and_job):

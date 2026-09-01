@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveApiAuth } from "@/lib/api-auth";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const token = request.cookies.get("token")?.value;
-  if (!token) {
-    return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+  const auth = resolveApiAuth(request);
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const { id } = await params;
 
-  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  const headers: Record<string, string> = { ...auth.authHeaders };
   const range = request.headers.get("range");
   if (range) {
     headers.Range = range;

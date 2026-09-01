@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
-import { GithubLogo, LinkedinLogo, List, SignOut, WhatsappLogo, X } from "@phosphor-icons/react";
+import { usePathname } from "next/navigation";
+import { GithubLogo, LinkedinLogo, List, WhatsappLogo, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { TonalysLogo } from "@/components/tonalys-logo";
 import { cn } from "@/lib/utils";
@@ -25,18 +24,10 @@ function isActive(pathname: string, href: string): boolean {
 
 export function SiteNavbar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const queryClient = useQueryClient();
   const [menuOpen, setMenuOpen] = useState(false);
 
   if (pathname === "/login") {
     return null;
-  }
-
-  async function signOut() {
-    await fetch("/api/logout", { method: "POST" });
-    queryClient.clear();
-    router.push("/login");
   }
 
   return (
@@ -100,15 +91,6 @@ export function SiteNavbar() {
           </a>
           <Button
             variant="ghost"
-            size="sm"
-            onClick={signOut}
-            className="hidden sm:inline-flex"
-          >
-            <SignOut data-icon="inline-start" aria-hidden />
-            Sign out
-          </Button>
-          <Button
-            variant="ghost"
             size="icon-sm"
             className="sm:hidden"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
@@ -133,14 +115,6 @@ export function SiteNavbar() {
               {link.label}
             </Link>
           ))}
-          <button
-            type="button"
-            onClick={signOut}
-            className="flex items-center gap-1.5 py-1.5 text-left text-xs font-medium text-muted-foreground hover:text-foreground"
-          >
-            <SignOut aria-hidden className="size-4" />
-            Sign out
-          </button>
         </div>
       )}
     </nav>
