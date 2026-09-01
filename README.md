@@ -6,7 +6,7 @@ Upload an audio file or paste a YouTube link. Tonalys transcribes the
 **chords**, **tempo** and **key**, and plays them back **synced to the audio** —
 on a piano keyboard and as guitar chord shapes.
 
-![Tonalys homepage](docs/screenshots/homepage.jpg)
+![Tonalys homepage](docs/screenshots/homepage.png)
 
 > Personal project + portfolio piece. It's a **V1** — the analysis pipeline and
 > the player are done; more is planned (see [Roadmap](#status--roadmap)).
@@ -30,9 +30,9 @@ on a piano keyboard and as guitar chord shapes.
 
 | Player — piano | Player — guitar |
 |---|---|
-| ![Player, piano view](docs/screenshots/player-piano.jpg) | ![Player, guitar view](docs/screenshots/player-guitar.jpg) |
+| ![Player, piano view](docs/screenshots/player-piano.png) | ![Player, guitar view](docs/screenshots/player-guitar.png) |
 
-![Add a track](docs/screenshots/upload.jpg)
+![Add a track](docs/screenshots/upload.png)
 
 ---
 
