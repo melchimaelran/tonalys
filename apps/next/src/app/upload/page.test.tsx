@@ -114,6 +114,42 @@ describe("UploadPage", () => {
     expect(uploadInit.body).toBeInstanceOf(FormData);
   });
 
+  it("shows the track title returned by the submit response while analysis runs", async () => {
+    vi.mocked(fetch).mockImplementation((input) => {
+      const url = String(input);
+      if (url === "/api/upload") {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ id: "track-1", jobId: "job-1", title: "My Great Song" }),
+            { status: 201 },
+          ),
+        );
+      }
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            id: "job-1",
+            trackId: "track-1",
+            status: "PENDING",
+            errorMessage: null,
+          }),
+          { status: 200 },
+        ),
+      );
+    });
+    renderPage();
+    const file = new File(["audio"], "track.mp3", { type: "audio/mpeg" });
+    fireEvent.change(screen.getByLabelText(/drag and drop an audio file/i), {
+      target: { files: [file] },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /upload/i }));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("job-status")).toHaveTextContent(/my great song/i),
+    );
+  });
+
   it("shows an error and stays on the form when the upload is rejected", async () => {
     vi.mocked(fetch).mockResolvedValue(
       new Response(JSON.stringify({ message: "File is too large" }), { status: 413 }),

@@ -75,6 +75,7 @@ export function TrackView({ trackId }: TrackViewProps) {
     (chord) => ({
       id: chord.id,
       label: formatChordLabel({ ...resolveTransposedChord(chord, view, capo, transpose), chordType: chord.chordType }),
+      durationSeconds: Math.round(chord.endTime - chord.startTime),
     }),
   );
 

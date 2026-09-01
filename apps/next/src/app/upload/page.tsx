@@ -16,6 +16,7 @@ type Source = "file" | "youtube";
 
 interface SubmitResponse {
   jobId?: string;
+  title?: string;
   message?: string;
 }
 
@@ -24,6 +25,7 @@ export default function UploadPage() {
   const [source, setSource] = useState<Source>("file");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
+  const [trackTitle, setTrackTitle] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -67,6 +69,7 @@ export default function UploadPage() {
 
   function resetJob() {
     setJobId(null);
+    setTrackTitle(null);
     setSubmitError(null);
   }
 
@@ -92,6 +95,7 @@ export default function UploadPage() {
       }
 
       setJobId(data.jobId);
+      setTrackTitle(data.title ?? null);
     } catch {
       setSubmitError("Analysis service unavailable — please try again shortly");
     } finally {
@@ -166,6 +170,9 @@ export default function UploadPage() {
                   data-testid="job-status"
                   className="flex flex-col items-center gap-4"
                 >
+                  {trackTitle && (
+                    <h2 className="text-center text-base font-semibold">{trackTitle}</h2>
+                  )}
                   <AnalysisStatus
                     status={jobStatus.data.status}
                     errorMessage={jobStatus.data.errorMessage}

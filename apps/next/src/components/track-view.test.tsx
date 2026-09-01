@@ -404,12 +404,14 @@ describe("TrackView", () => {
 
     const list = screen.getByRole("list", { name: /upcoming chords/i });
     const items = within(list).getAllByRole("listitem");
-    expect(items.map((item) => item.textContent)).toEqual([
+    expect(items.map((item) => item.firstElementChild?.textContent)).toEqual([
       "D major",
       "E major",
       "F major",
       "G major",
     ]);
+    // duration is shown alongside each upcoming chord label
+    expect(items[0]).toHaveTextContent("2s");
   });
 
   it("shows fewer than 4 upcoming chords when fewer remain", async () => {
@@ -462,7 +464,11 @@ describe("TrackView", () => {
 
     const list = screen.getByRole("list", { name: /upcoming chords/i });
     const items = within(list).getAllByRole("listitem");
-    expect(items.map((item) => item.textContent)).toEqual(["E major", "F major", "G major"]);
+    expect(items.map((item) => item.firstElementChild?.textContent)).toEqual([
+      "E major",
+      "F major",
+      "G major",
+    ]);
   });
 
   it("grows the current chord's progress fill as playback advances within its window", async () => {

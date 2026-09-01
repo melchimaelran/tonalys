@@ -69,6 +69,7 @@ export function AnalysisStatus({
   }
 
   if (queued) {
+    const ahead = queuePosition - 1;
     return (
       <div role="status" aria-live="polite" className="flex flex-col items-center gap-2">
         <div className="flex items-center gap-3">
@@ -77,6 +78,12 @@ export function AnalysisStatus({
             Waiting in queue — position {queuePosition}
           </p>
         </div>
+        <p className="max-w-sm text-center text-xs text-muted-foreground">
+          The server analyses one track at a time —{" "}
+          {ahead === 1
+            ? "1 track ahead of you is still being processed. Yours starts as soon as it finishes."
+            : `${ahead} tracks ahead of you are still being processed. Yours starts as soon as they finish.`}
+        </p>
         <p className="text-xs text-muted-foreground">
           Please wait — this can take a few minutes. Keep this tab open.
         </p>
