@@ -67,7 +67,7 @@ describe("UpcomingChords", () => {
     expect(screen.getByText("F#m7b5").className).toContain("whitespace-nowrap");
   });
 
-  it("explains the width-to-duration mapping through a tooltip", async () => {
+  it("explains the width-to-duration mapping in a popover opened by click", async () => {
     const user = userEvent.setup();
     render(
       <UpcomingChords
@@ -75,8 +75,9 @@ describe("UpcomingChords", () => {
       />,
     );
 
-    screen.getByRole("button", { name: /about the chord bars/i });
-    await user.tab();
+    expect(screen.queryByText(/width shows how long the chord/i)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /about the chord bars/i }));
 
     await waitFor(() =>
       expect(screen.getByText(/width shows how long the chord/i)).toBeInTheDocument(),

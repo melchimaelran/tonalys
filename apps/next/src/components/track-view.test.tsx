@@ -402,7 +402,7 @@ describe("TrackView", () => {
     renderTrackView("track-1");
     await screen.findByText("C major");
 
-    const list = screen.getByRole("list", { name: /upcoming chords/i });
+    const list = screen.getByRole("list", { name: /upcoming/i });
     const items = within(list).getAllByRole("listitem");
     expect(items.map((item) => item.firstElementChild?.textContent)).toEqual([
       "D major",
@@ -426,7 +426,7 @@ describe("TrackView", () => {
     renderTrackView("track-1");
     await screen.findByText("C major");
 
-    const list = screen.getByRole("list", { name: /upcoming chords/i });
+    const list = screen.getByRole("list", { name: /upcoming/i });
     expect(within(list).getAllByRole("listitem")).toHaveLength(1);
   });
 
@@ -439,7 +439,7 @@ describe("TrackView", () => {
     renderTrackView("track-1");
     await screen.findByText("C major");
 
-    expect(screen.queryByRole("list", { name: /upcoming chords/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: /upcoming/i })).not.toBeInTheDocument();
   });
 
   it("shifts the upcoming chords list forward as playback crosses a chord boundary", async () => {
@@ -462,7 +462,7 @@ describe("TrackView", () => {
     fireEvent.timeUpdate(audio);
     await screen.findByText("D major");
 
-    const list = screen.getByRole("list", { name: /upcoming chords/i });
+    const list = screen.getByRole("list", { name: /upcoming/i });
     const items = within(list).getAllByRole("listitem");
     expect(items.map((item) => item.firstElementChild?.textContent)).toEqual([
       "E major",
@@ -522,7 +522,7 @@ describe("TrackView", () => {
     });
 
     expect(screen.getByText("D major")).toBeInTheDocument();
-    const list = screen.getByRole("list", { name: /upcoming chords/i });
+    const list = screen.getByRole("list", { name: /upcoming/i });
     expect(within(list).getByRole("listitem")).toHaveTextContent("A major");
   });
 
@@ -544,7 +544,7 @@ describe("TrackView", () => {
     });
 
     expect(screen.getByText("C major")).toBeInTheDocument();
-    const list = screen.getByRole("list", { name: /upcoming chords/i });
+    const list = screen.getByRole("list", { name: /upcoming/i });
     expect(within(list).getByRole("listitem")).toHaveTextContent("G major");
   });
 });
