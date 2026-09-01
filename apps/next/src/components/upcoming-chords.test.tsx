@@ -57,6 +57,16 @@ describe("UpcomingChords", () => {
     expect(items[0].className).toContain("min-w-[6rem]");
   });
 
+  it("keeps the chord name on a single line", () => {
+    render(
+      <UpcomingChords
+        chords={[{ id: "seg-2", label: "F#m7b5", durationSeconds: 4 }]}
+      />,
+    );
+
+    expect(screen.getByText("F#m7b5").className).toContain("whitespace-nowrap");
+  });
+
   it("explains the width-to-duration mapping through a tooltip", async () => {
     const user = userEvent.setup();
     render(
