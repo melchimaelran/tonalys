@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Chord, tempo and key detection from an audio file or a YouTube link, synced to playback.",
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "author": "Melchimael Roeh",
   "license": "MIT",

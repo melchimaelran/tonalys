@@ -54,6 +54,32 @@ describe("AnalysisStatus", () => {
     expect(screen.queryByText(/position/i)).not.toBeInTheDocument();
   });
 
+  it("tells a next-in-line user they're next without a zero count", () => {
+    render(
+      <AnalysisStatus status="PENDING" errorMessage={null} queuePosition={1} />,
+    );
+
+    expect(screen.getByText(/you're next/i)).toBeInTheDocument();
+    expect(screen.queryByText(/0 tracks ahead/i)).not.toBeInTheDocument();
+  });
+
+  it("explains why a queued user waits: server works one at a time, with the count ahead", () => {
+    render(
+      <AnalysisStatus status="PENDING" errorMessage={null} queuePosition={2} />,
+    );
+
+    expect(screen.getByText(/one track at a time/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 track ahead of you/i)).toBeInTheDocument();
+  });
+
+  it("pluralizes the count ahead for deeper queue positions", () => {
+    render(
+      <AnalysisStatus status="PENDING" errorMessage={null} queuePosition={4} />,
+    );
+
+    expect(screen.getByText(/3 tracks ahead of you/i)).toBeInTheDocument();
+  });
+
   it("advances to the next phase after the first phase's duration elapses", () => {
     render(<AnalysisStatus status="PROCESSING" errorMessage={null} />);
 
