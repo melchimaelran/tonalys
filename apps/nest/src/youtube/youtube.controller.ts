@@ -1,12 +1,20 @@
-import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { CreateYoutubeTrackDto } from './dto/create-youtube-track.dto';
 import { YoutubeService } from './youtube.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
+import { DailyQuotaGuard } from '../quota/daily-quota.guard';
 
 const MAX_DURATION_SECONDS = 10 * 60;
 
 @Controller('youtube')
+@UseGuards(DailyQuotaGuard)
 export class YoutubeController {
   constructor(
     private readonly youtubeService: YoutubeService,

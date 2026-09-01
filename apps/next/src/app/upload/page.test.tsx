@@ -221,6 +221,82 @@ describe("UploadPage", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/tracks/track-1"));
   });
 
+  it("cancels the in-flight job when the page is closed mid-analysis", async () => {
+    const sendBeacon = vi.fn();
+    Object.defineProperty(navigator, "sendBeacon", {
+      value: sendBeacon,
+      configurable: true,
+    });
+    vi.mocked(fetch).mockImplementation((input) => {
+      const url = String(input);
+      if (url === "/api/upload") {
+        return Promise.resolve(
+          new Response(JSON.stringify({ id: "track-1", jobId: "job-1" }), { status: 201 }),
+        );
+      }
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            id: "job-1",
+            trackId: "track-1",
+            status: "PENDING",
+            errorMessage: null,
+          }),
+          { status: 200 },
+        ),
+      );
+    });
+    renderPage();
+    const file = new File(["audio"], "track.mp3", { type: "audio/mpeg" });
+    fireEvent.change(screen.getByLabelText(/drag and drop an audio file/i), {
+      target: { files: [file] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /upload/i }));
+    await waitFor(() => expect(screen.getByTestId("job-status")).toBeInTheDocument());
+
+    fireEvent(window, new Event("pagehide"));
+
+    expect(sendBeacon).toHaveBeenCalledWith("/api/jobs/job-1/cancel");
+  });
+
+  it("does not cancel the job once analysis has finished", async () => {
+    const sendBeacon = vi.fn();
+    Object.defineProperty(navigator, "sendBeacon", {
+      value: sendBeacon,
+      configurable: true,
+    });
+    vi.mocked(fetch).mockImplementation((input) => {
+      const url = String(input);
+      if (url === "/api/upload") {
+        return Promise.resolve(
+          new Response(JSON.stringify({ id: "track-1", jobId: "job-1" }), { status: 201 }),
+        );
+      }
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            id: "job-1",
+            trackId: "track-1",
+            status: "DONE",
+            errorMessage: null,
+          }),
+          { status: 200 },
+        ),
+      );
+    });
+    renderPage();
+    const file = new File(["audio"], "track.mp3", { type: "audio/mpeg" });
+    fireEvent.change(screen.getByLabelText(/drag and drop an audio file/i), {
+      target: { files: [file] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /upload/i }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/tracks/track-1"));
+
+    fireEvent(window, new Event("pagehide"));
+
+    expect(sendBeacon).not.toHaveBeenCalled();
+  });
+
   it("returns to the form when retrying after an ERROR job status", async () => {
     vi.mocked(fetch).mockImplementation((input) => {
       const url = String(input);

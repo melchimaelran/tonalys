@@ -75,6 +75,41 @@ describe('JobsController (e2e)', () => {
       trackId: track.id,
       status: 'PROCESSING',
       errorMessage: null,
+      queuePosition: 0,
     });
+  });
+
+  it('POST /jobs/:id/cancel deletes the track and its job', async () => {
+    const track = await prismaService.track.create({
+      data: {
+        title: 'Abandoned track',
+        sourceType: 'UPLOAD',
+        status: 'PENDING',
+        audioFileKey: `${randomUUID()}.mp3`,
+      },
+    });
+    createdTrackIds.push(track.id);
+    const job = await prismaService.analysisJob.create({
+      data: { trackId: track.id, status: 'PENDING' },
+    });
+
+    await request(app.getHttpServer())
+      .post(`/jobs/${job.id}/cancel`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(204);
+
+    expect(
+      await prismaService.track.findUnique({ where: { id: track.id } }),
+    ).toBeNull();
+    expect(
+      await prismaService.analysisJob.findUnique({ where: { id: job.id } }),
+    ).toBeNull();
+  });
+
+  it('POST /jobs/:id/cancel returns 404 for an unknown job', () => {
+    return request(app.getHttpServer())
+      .post(`/jobs/${randomUUID()}/cancel`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(404);
   });
 });

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveApiAuth } from "@/lib/api-auth";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; segmentId: string }> },
 ) {
-  const token = request.cookies.get("token")?.value;
-  if (!token) {
-    return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+  const auth = resolveApiAuth(request);
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const { id, segmentId } = await params;
@@ -17,7 +18,7 @@ export async function PATCH(
     nestResponse = await fetch(`${process.env.NEST_API_URL}/tracks/${id}/chords/${segmentId}`, {
       method: "PATCH",
       headers: {
-        Authorization: `Bearer ${token}`,
+        ...auth.authHeaders,
         "Content-Type": "application/json",
       },
       body,

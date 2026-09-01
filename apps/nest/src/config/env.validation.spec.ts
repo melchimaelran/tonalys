@@ -38,4 +38,18 @@ describe('validateEnv', () => {
   it('throws when JWT_SECRET is too short', () => {
     expect(() => validateEnv({ ...validEnv, JWT_SECRET: 'short' })).toThrow();
   });
+
+  it('defaults AUTH_ENABLED to "true" when absent', () => {
+    expect(validateEnv(validEnv)).toMatchObject({ AUTH_ENABLED: 'true' });
+  });
+
+  it('keeps AUTH_ENABLED="false" when provided', () => {
+    expect(validateEnv({ ...validEnv, AUTH_ENABLED: 'false' })).toMatchObject({
+      AUTH_ENABLED: 'false',
+    });
+  });
+
+  it('throws when AUTH_ENABLED is neither "true" nor "false"', () => {
+    expect(() => validateEnv({ ...validEnv, AUTH_ENABLED: 'yes' })).toThrow();
+  });
 });

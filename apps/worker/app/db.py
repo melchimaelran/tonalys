@@ -28,6 +28,12 @@ def get_audio_file_key(track_id: str) -> str | None:
         return row[0] if row else None
 
 
+def track_exists(track_id: str) -> bool:
+    with _cursor() as cur:
+        cur.execute("SELECT 1 FROM tracks WHERE id = %s", (track_id,))
+        return cur.fetchone() is not None
+
+
 def save_chord_segments(track_id: str, segments: list[ChordSegment]) -> None:
     with _cursor() as cur:
         for segment in segments:

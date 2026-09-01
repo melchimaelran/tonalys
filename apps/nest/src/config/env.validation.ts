@@ -11,6 +11,9 @@ const schema = Joi.object({
   MINIO_BUCKET: Joi.string().required(),
   RABBITMQ_URL: Joi.string().uri().required(),
   WORKER_URL: Joi.string().uri().required(),
+  // Set to "false" to open every route with no login (temporary public
+  // access). Default "true" keeps auth exactly as it is.
+  AUTH_ENABLED: Joi.string().valid('true', 'false').default('true'),
 })
   .unknown(true)
   .required();
