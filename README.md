@@ -110,6 +110,8 @@ piano/guitar playback, capo/transpose, A–B loop, speed, manual chord editing.
 
 - **Functional harmony** — scale degrees / roman numerals per chord, and an
   explicit key/scale timeline (keys can change within a song).
+- **More views** — a beat / bar grid (chords laid out in measures, lead-sheet
+  style) alongside the current scrolling list.
 - **Learn mode** — practice-oriented view (drills, looped sections, chord
   quizzes).
 - Deeper key handling, more input sources, quality-of-life polish.
