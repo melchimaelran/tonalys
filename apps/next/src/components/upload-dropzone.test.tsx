@@ -20,7 +20,7 @@ describe("UploadDropzone", () => {
   it("shows the accepted format and size limit", () => {
     render(<UploadDropzone />);
 
-    expect(screen.getByText(/mp3 or wav, up to 20 mb/i)).toBeInTheDocument();
+    expect(screen.getByText(/mp3 or wav .* up to 20 mb/i)).toBeInTheDocument();
   });
 
   it("calls onFileSelected with the dropped file", () => {

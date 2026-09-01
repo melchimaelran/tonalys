@@ -9,14 +9,14 @@ describe('YoutubeController', () => {
   let youtubeService: { getVideoInfo: jest.Mock };
   let prismaService: { $transaction: jest.Mock };
   let rabbitMQService: { publish: jest.Mock };
-  let txTrack: { create: jest.Mock };
+  let txTrack: { create: jest.Mock; count: jest.Mock };
   let txAnalysisJob: { create: jest.Mock };
 
   const VALID_URL = 'https://www.youtube.com/watch?v=abc12345678';
 
   beforeEach(() => {
     youtubeService = { getVideoInfo: jest.fn() };
-    txTrack = { create: jest.fn() };
+    txTrack = { create: jest.fn(), count: jest.fn().mockResolvedValue(0) };
     txAnalysisJob = { create: jest.fn() };
     prismaService = {
       $transaction: jest.fn((callback: (tx: unknown) => unknown) =>
@@ -96,6 +96,7 @@ describe('YoutubeController', () => {
         sourceUrl: VALID_URL,
         durationSeconds: 180,
         status: 'PENDING',
+        isDemo: true,
       },
     });
     expect(txAnalysisJob.create).toHaveBeenCalledWith({
@@ -111,5 +112,42 @@ describe('YoutubeController', () => {
       status: 'PENDING',
       jobId: 'job-1',
     });
+  });
+
+  it('flags the track as a demo while fewer than 20 demos exist', async () => {
+    youtubeService.getVideoInfo.mockResolvedValue({
+      available: true,
+      title: 'A great song',
+      durationSeconds: 180,
+    });
+    txTrack.count.mockResolvedValue(19);
+    txTrack.create.mockResolvedValue({ id: 'track-1', status: 'PENDING' });
+    txAnalysisJob.create.mockResolvedValue({ id: 'job-1', status: 'PENDING' });
+
+    await controller.create({ url: VALID_URL });
+
+    expect(txTrack.count).toHaveBeenCalledWith({ where: { isDemo: true } });
+    const [createCall] = txTrack.create.mock.calls as Array<
+      [{ data: { isDemo: boolean } }]
+    >;
+    expect(createCall[0].data.isDemo).toBe(true);
+  });
+
+  it('does not flag the track as a demo once 20 demos exist', async () => {
+    youtubeService.getVideoInfo.mockResolvedValue({
+      available: true,
+      title: 'A great song',
+      durationSeconds: 180,
+    });
+    txTrack.count.mockResolvedValue(20);
+    txTrack.create.mockResolvedValue({ id: 'track-1', status: 'PENDING' });
+    txAnalysisJob.create.mockResolvedValue({ id: 'job-1', status: 'PENDING' });
+
+    await controller.create({ url: VALID_URL });
+
+    const [createCall] = txTrack.create.mock.calls as Array<
+      [{ data: { isDemo: boolean } }]
+    >;
+    expect(createCall[0].data.isDemo).toBe(false);
   });
 });

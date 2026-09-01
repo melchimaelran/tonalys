@@ -44,6 +44,7 @@ model Track {
   tempoBpm        Float?          @map("tempo_bpm")
   keyRoot         String?         @map("key_root")
   keyScale        String?         @map("key_scale")
+  isDemo          Boolean         @default(false) @map("is_demo")
   createdAt       DateTime        @default(now()) @map("created_at")
 
   chordSegments ChordSegment[]

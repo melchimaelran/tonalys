@@ -37,6 +37,9 @@ export class YoutubeController {
     }
 
     const { track, job } = await this.prismaService.$transaction(async (tx) => {
+      // First 20 tracks ever analysed become the homepage "Demo songs"
+      // (see upload.controller.ts for the rationale).
+      const demoCount = await tx.track.count({ where: { isDemo: true } });
       const createdTrack = await tx.track.create({
         data: {
           title: info.title ?? dto.url,
@@ -44,6 +47,7 @@ export class YoutubeController {
           sourceUrl: dto.url,
           durationSeconds: info.durationSeconds,
           status: 'PENDING',
+          isDemo: demoCount < 20,
         },
       });
       const createdJob = await tx.analysisJob.create({

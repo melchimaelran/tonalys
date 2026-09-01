@@ -18,6 +18,19 @@ describe("AnalysisStatus", () => {
     expect(screen.getByText("Detecting tempo")).toBeInTheDocument();
   });
 
+  it("reassures that analysis takes a while, both while running and while queued", () => {
+    const { rerender } = render(
+      <AnalysisStatus status="PROCESSING" errorMessage={null} />,
+    );
+    expect(screen.getByText(/can take a few minutes/i)).toBeInTheDocument();
+    expect(screen.getByText(/keep this tab open/i)).toBeInTheDocument();
+
+    rerender(
+      <AnalysisStatus status="PENDING" errorMessage={null} queuePosition={2} />,
+    );
+    expect(screen.getByText(/can take a few minutes/i)).toBeInTheDocument();
+  });
+
   it("shows the queue position instead of phases when PENDING and behind other jobs", () => {
     render(
       <AnalysisStatus status="PENDING" errorMessage={null} queuePosition={3} />,

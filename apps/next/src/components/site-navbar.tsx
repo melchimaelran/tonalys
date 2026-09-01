@@ -13,7 +13,7 @@ const LINKEDIN_URL = "https://www.linkedin.com/in/melchimael-roeh-429ab6210/";
 const WHATSAPP_URL = "https://wa.me/261387817393";
 
 const NAV_LINKS = [
-  { href: "/", label: "Library" },
+  { href: "/", label: "Home" },
   { href: "/upload", label: "Add a track" },
   { href: "/about", label: "About" },
 ];

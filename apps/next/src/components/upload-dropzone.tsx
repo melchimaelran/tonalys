@@ -32,7 +32,7 @@ export function UploadDropzone({ onFileSelected }: UploadDropzoneProps) {
     onFileSelected?.(file);
   }
 
-  function handleDragOver(event: DragEvent<HTMLDivElement>) {
+  function handleDragOver(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
     setIsDragging(true);
   }
@@ -41,7 +41,7 @@ export function UploadDropzone({ onFileSelected }: UploadDropzoneProps) {
     setIsDragging(false);
   }
 
-  function handleDrop(event: DragEvent<HTMLDivElement>) {
+  function handleDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
     setIsDragging(false);
     const file = event.dataTransfer.files[0];
@@ -54,30 +54,43 @@ export function UploadDropzone({ onFileSelected }: UploadDropzoneProps) {
   }
 
   return (
-    <div
+    // The whole box is the label, so a click (or tap) anywhere in it opens
+    // the file picker — not just on the text.
+    <label
+      htmlFor="audio-file"
       data-testid="dropzone"
       data-dragging={isDragging}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        "flex flex-col items-center gap-2 rounded-lg border-2 border-dashed p-8 text-center transition-colors",
-        isDragging ? "border-primary bg-accent" : "border-input",
+        "flex cursor-pointer flex-col items-center gap-2 border-2 border-dashed p-10 text-center transition-colors focus-within:border-primary",
+        isDragging
+          ? "border-primary bg-primary/5"
+          : "border-border hover:border-muted-foreground/40 hover:bg-foreground/[0.02]",
       )}
     >
-      <UploadSimple aria-hidden className="size-6 text-muted-foreground" />
-      <label htmlFor="audio-file" className="cursor-pointer text-sm font-medium">
+      <UploadSimple
+        aria-hidden
+        className={cn(
+          "size-7 transition-colors",
+          isDragging ? "text-primary" : "text-muted-foreground",
+        )}
+      />
+      <span className="text-sm font-medium">
         Drag and drop an audio file here, or click to browse
-        <input
-          id="audio-file"
-          type="file"
-          accept=".mp3,.wav,audio/mpeg,audio/wav"
-          className="sr-only"
-          onChange={handleChange}
-        />
-      </label>
-      <p className="text-xs text-muted-foreground">MP3 or WAV, up to 20 MB</p>
-      {error && <p className="text-xs text-destructive">{error}</p>}
-    </div>
+      </span>
+      <span className="font-mono text-xs text-muted-foreground">
+        MP3 or WAV · up to 20 MB
+      </span>
+      {error && <span className="text-xs text-destructive">{error}</span>}
+      <input
+        id="audio-file"
+        type="file"
+        accept=".mp3,.wav,audio/mpeg,audio/wav"
+        className="sr-only"
+        onChange={handleChange}
+      />
+    </label>
   );
 }

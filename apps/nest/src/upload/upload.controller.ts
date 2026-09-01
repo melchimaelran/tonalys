@@ -52,12 +52,17 @@ export class UploadController {
 
     try {
       ({ track, job } = await this.prismaService.$transaction(async (tx) => {
+        // The first 20 tracks ever analysed become the homepage "Demo
+        // songs"; counting isDemo rows (not all tracks) locks the set once
+        // it's full, so deleting a non-demo track never re-opens a slot.
+        const demoCount = await tx.track.count({ where: { isDemo: true } });
         const createdTrack = await tx.track.create({
           data: {
             title: file.originalname,
             sourceType: 'UPLOAD',
             status: 'PENDING',
             audioFileKey: key,
+            isDemo: demoCount < 20,
           },
         });
         const createdJob = await tx.analysisJob.create({

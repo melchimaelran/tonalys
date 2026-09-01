@@ -43,9 +43,14 @@ export class TracksController {
     private readonly storageService: StorageService,
   ) {}
 
+  // Homepage "Demo songs" list only — the first 20 tracks ever analysed
+  // (isDemo). Every other track stays in the DB but is unlisted; a later
+  // ticket adds management/deletion for those.
   @Get()
   async listTracks() {
     return this.prismaService.track.findMany({
+      where: { isDemo: true },
+      take: 20,
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,

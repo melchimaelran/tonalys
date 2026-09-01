@@ -4,9 +4,9 @@ import { BackLink } from "./back-link";
 
 describe("BackLink", () => {
   it("renders a link to href with the given label", () => {
-    render(<BackLink href="/" label="Library" />);
+    render(<BackLink href="/" label="Home" />);
 
-    const link = screen.getByRole("link", { name: /library/i });
+    const link = screen.getByRole("link", { name: /home/i });
     expect(link).toHaveAttribute("href", "/");
   });
 });
