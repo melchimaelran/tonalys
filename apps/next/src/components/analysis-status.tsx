@@ -70,39 +70,50 @@ export function AnalysisStatus({
 
   if (queued) {
     return (
-      <div role="status" aria-live="polite" className="flex items-center gap-3">
-        <CircleNotch aria-hidden className="size-4 shrink-0 animate-spin text-foreground" />
-        <p className="text-sm text-muted-foreground">
-          Waiting in queue — position {queuePosition}
+      <div role="status" aria-live="polite" className="flex flex-col items-center gap-2">
+        <div className="flex items-center gap-3">
+          <CircleNotch aria-hidden className="size-4 shrink-0 animate-spin text-foreground" />
+          <p className="text-sm text-muted-foreground">
+            Waiting in queue — position {queuePosition}
+          </p>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Please wait — this can take a few minutes. Keep this tab open.
         </p>
       </div>
     );
   }
 
   return (
-    <div role="status" aria-live="polite" className="flex w-full flex-col gap-2">
-      {PHASES.map((phase, index) => (
-        <div key={phase.label} className="flex items-center gap-2">
-          {index < activePhase && (
-            <CheckCircle aria-hidden weight="fill" className="size-4 shrink-0 text-emerald-600" />
-          )}
-          {index === activePhase && (
-            <CircleNotch aria-hidden className="size-4 shrink-0 animate-spin text-foreground" />
-          )}
-          {index > activePhase && (
-            <Circle aria-hidden className="size-4 shrink-0 text-muted-foreground" />
-          )}
-          <p
-            className={
-              index === activePhase
-                ? "text-sm text-foreground"
-                : "text-sm text-muted-foreground"
-            }
-          >
-            {phase.label}
-          </p>
-        </div>
-      ))}
+    <div role="status" aria-live="polite" className="flex w-full flex-col gap-3">
+      <div className="flex w-full flex-col gap-2">
+        {PHASES.map((phase, index) => (
+          <div key={phase.label} className="flex items-center gap-2">
+            {index < activePhase && (
+              <CheckCircle aria-hidden weight="fill" className="size-4 shrink-0 text-emerald-600" />
+            )}
+            {index === activePhase && (
+              <CircleNotch aria-hidden className="size-4 shrink-0 animate-spin text-foreground" />
+            )}
+            {index > activePhase && (
+              <Circle aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+            )}
+            <p
+              className={
+                index === activePhase
+                  ? "text-sm text-foreground"
+                  : "text-sm text-muted-foreground"
+              }
+            >
+              {phase.label}
+            </p>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Please wait — analysing the audio can take a few minutes. Keep this tab
+        open.
+      </p>
     </div>
   );
 }

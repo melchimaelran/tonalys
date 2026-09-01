@@ -180,7 +180,7 @@ describe('TracksController', () => {
     ).rejects.toThrow(NotFoundException);
   });
 
-  it('lists all tracks, newest first', async () => {
+  it('lists demo tracks only, newest first, capped at 20', async () => {
     const tracks = [
       {
         id: 'track-2',
@@ -204,6 +204,8 @@ describe('TracksController', () => {
     const result = await controller.listTracks();
 
     expect(prismaService.track.findMany).toHaveBeenCalledWith({
+      where: { isDemo: true },
+      take: 20,
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,

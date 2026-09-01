@@ -20,7 +20,7 @@ describe("SiteNavbar", () => {
   it("renders the primary nav links", () => {
     renderNavbar();
 
-    expect(screen.getByRole("link", { name: "Library" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Add a track" })).toHaveAttribute(
       "href",
       "/upload",
@@ -56,7 +56,7 @@ describe("SiteNavbar", () => {
       "aria-current",
       "page",
     );
-    expect(screen.getByRole("link", { name: "Library" })).not.toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute(
       "aria-current",
     );
   });

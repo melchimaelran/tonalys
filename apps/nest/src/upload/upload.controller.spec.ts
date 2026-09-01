@@ -9,7 +9,7 @@ describe('UploadController', () => {
   let storageService: { upload: jest.Mock; remove: jest.Mock };
   let prismaService: { $transaction: jest.Mock };
   let rabbitMQService: { publish: jest.Mock };
-  let txTrack: { create: jest.Mock };
+  let txTrack: { create: jest.Mock; count: jest.Mock };
   let txAnalysisJob: { create: jest.Mock };
 
   beforeEach(() => {
@@ -17,7 +17,7 @@ describe('UploadController', () => {
       upload: jest.fn(),
       remove: jest.fn().mockResolvedValue(undefined),
     };
-    txTrack = { create: jest.fn() };
+    txTrack = { create: jest.fn(), count: jest.fn().mockResolvedValue(0) };
     txAnalysisJob = { create: jest.fn() };
     prismaService = {
       $transaction: jest.fn((callback: (tx: unknown) => unknown) =>
@@ -75,6 +75,7 @@ describe('UploadController', () => {
         sourceType: 'UPLOAD',
         status: 'PENDING',
         audioFileKey: uploadKey,
+        isDemo: true,
       },
     });
     expect(txAnalysisJob.create).toHaveBeenCalledWith({
@@ -94,6 +95,47 @@ describe('UploadController', () => {
       trackId: 'track-1',
       jobId: 'job-1',
     });
+  });
+
+  it('flags the track as a demo while fewer than 20 demos exist', async () => {
+    const file = {
+      originalname: 'song.mp3',
+      buffer: Buffer.from('audio-bytes'),
+    } as Express.Multer.File;
+    storageService.upload.mockImplementation((key: string) =>
+      Promise.resolve(key),
+    );
+    txTrack.count.mockResolvedValue(19);
+    txTrack.create.mockResolvedValue({ id: 'track-1', status: 'PENDING' });
+    txAnalysisJob.create.mockResolvedValue({ id: 'job-1', status: 'PENDING' });
+
+    await controller.upload(file);
+
+    expect(txTrack.count).toHaveBeenCalledWith({ where: { isDemo: true } });
+    const [createCall] = txTrack.create.mock.calls as Array<
+      [{ data: { isDemo: boolean } }]
+    >;
+    expect(createCall[0].data.isDemo).toBe(true);
+  });
+
+  it('does not flag the track as a demo once 20 demos exist', async () => {
+    const file = {
+      originalname: 'song.mp3',
+      buffer: Buffer.from('audio-bytes'),
+    } as Express.Multer.File;
+    storageService.upload.mockImplementation((key: string) =>
+      Promise.resolve(key),
+    );
+    txTrack.count.mockResolvedValue(20);
+    txTrack.create.mockResolvedValue({ id: 'track-1', status: 'PENDING' });
+    txAnalysisJob.create.mockResolvedValue({ id: 'job-1', status: 'PENDING' });
+
+    await controller.upload(file);
+
+    const [createCall] = txTrack.create.mock.calls as Array<
+      [{ data: { isDemo: boolean } }]
+    >;
+    expect(createCall[0].data.isDemo).toBe(false);
   });
 
   it('does not publish if the transaction fails', async () => {

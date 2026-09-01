@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { GithubLogo, LinkedinLogo, WhatsappLogo } from "@phosphor-icons/react/dist/ssr";
+import { Section } from "@/components/section";
 
 const GITHUB_URL = "https://github.com/melchimaelran/tonalys";
 const LINKEDIN_URL = "https://www.linkedin.com/in/melchimael-roeh-429ab6210/";
@@ -23,23 +24,6 @@ const STACK = [
   "MinIO",
   "Docker Compose",
 ];
-
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-      <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-        {children}
-      </div>
-    </section>
-  );
-}
 
 export default function AboutPage() {
   return (

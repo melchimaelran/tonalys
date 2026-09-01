@@ -2,14 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileArrowUp, UploadSimple, YoutubeLogo } from "@phosphor-icons/react";
+import { FileArrowUp, MusicNote, UploadSimple, X, YoutubeLogo } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalysisStatus } from "@/components/analysis-status";
 import { BackLink } from "@/components/back-link";
+import { Eyebrow } from "@/components/eyebrow";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { YoutubeLinkForm } from "@/components/youtube-link-form";
 import { useJobStatus } from "@/hooks/use-job-status";
+import { cn } from "@/lib/utils";
 
 type Source = "file" | "youtube";
 
@@ -116,95 +117,148 @@ export default function UploadPage() {
     );
   }
 
+  const tabClass = (active: boolean) =>
+    cn(
+      "flex flex-1 items-center justify-center gap-1.5 border-b-2 py-3 text-xs font-medium transition-colors [&_svg]:size-4",
+      active
+        ? "border-primary text-foreground"
+        : "border-transparent text-muted-foreground hover:text-foreground",
+    );
+
   return (
-    <div className="flex flex-1 flex-col items-center gap-4 bg-background p-4">
-      <div className="w-full max-w-sm">
-        <BackLink href="/" label="Library" />
-      </div>
-      <Card className="mt-auto mb-auto w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Add a track</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+    <div className="flex flex-1 justify-center bg-background px-4">
+      <main className="flex w-full max-w-2xl flex-col gap-6 py-12">
+        <BackLink href="/" label="Home" />
+
+        <div className="flex flex-col gap-2">
+          <Eyebrow>Add a track</Eyebrow>
+          <h1 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
+            Add a track
+          </h1>
+          <p className="max-w-md text-sm text-muted-foreground">
+            An audio file or a YouTube link — Tonalys detects the chords, tempo
+            and key, synced to playback.
+          </p>
+        </div>
+
+        <div className="border border-border bg-card">
           {jobId ? (
-            jobStatus.isError ? (
-              <div data-testid="job-status-error" className="flex flex-col items-center gap-3">
-                <p className="text-sm text-destructive">
-                  Lost track of this job&apos;s status — please refresh
+            <div className="p-6">
+              {jobStatus.isError ? (
+                <div
+                  data-testid="job-status-error"
+                  className="flex flex-col items-center gap-3"
+                >
+                  <p className="text-sm text-destructive">
+                    Lost track of this job&apos;s status — please refresh
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={resetJob}
+                  >
+                    Try again
+                  </Button>
+                </div>
+              ) : jobStatus.data ? (
+                <div
+                  data-testid="job-status"
+                  className="flex flex-col items-center gap-4"
+                >
+                  <AnalysisStatus
+                    status={jobStatus.data.status}
+                    errorMessage={jobStatus.data.errorMessage}
+                    queuePosition={jobStatus.data.queuePosition}
+                    onRetry={resetJob}
+                  />
+                </div>
+              ) : (
+                <p
+                  data-testid="job-status"
+                  className="text-center text-sm text-muted-foreground"
+                >
+                  Loading…
                 </p>
-                <Button type="button" variant="outline" size="sm" onClick={resetJob}>
-                  Try again
-                </Button>
-              </div>
-            ) : jobStatus.data ? (
-              <div data-testid="job-status" className="flex flex-col items-center gap-4">
-                <AnalysisStatus
-                  status={jobStatus.data.status}
-                  errorMessage={jobStatus.data.errorMessage}
-                  queuePosition={jobStatus.data.queuePosition}
-                  onRetry={resetJob}
-                />
-              </div>
-            ) : (
-              <p data-testid="job-status" className="text-sm text-muted-foreground">
-                Loading...
-              </p>
-            )
+              )}
+            </div>
           ) : (
             <>
-              <div className="flex gap-2" role="tablist" aria-label="Track source">
-                <Button
+              <div
+                className="flex border-b border-border"
+                role="tablist"
+                aria-label="Track source"
+              >
+                <button
                   type="button"
-                  variant={source === "file" ? "default" : "outline"}
-                  size="sm"
                   role="tab"
                   aria-selected={source === "file"}
                   onClick={() => handleSourceChange("file")}
+                  className={tabClass(source === "file")}
                 >
-                  <FileArrowUp data-icon="inline-start" aria-hidden />
+                  <FileArrowUp aria-hidden />
                   Upload file
-                </Button>
-                <Button
+                </button>
+                <button
                   type="button"
-                  variant={source === "youtube" ? "default" : "outline"}
-                  size="sm"
                   role="tab"
                   aria-selected={source === "youtube"}
                   onClick={() => handleSourceChange("youtube")}
+                  className={tabClass(source === "youtube")}
                 >
-                  <YoutubeLogo data-icon="inline-start" aria-hidden />
+                  <YoutubeLogo aria-hidden />
                   YouTube link
-                </Button>
+                </button>
               </div>
 
-              {source === "file" ? (
-                <>
-                  <UploadDropzone onFileSelected={setSelectedFile} />
-                  {selectedFile && (
-                    <>
-                      <p className="text-xs text-muted-foreground">
-                        Selected: {selectedFile.name}
-                      </p>
-                      <Button
-                        type="button"
-                        disabled={isSubmitting}
-                        onClick={() => submitFile(selectedFile)}
-                      >
-                        <UploadSimple data-icon="inline-start" aria-hidden />
-                        {isSubmitting ? "Uploading..." : "Upload"}
-                      </Button>
-                    </>
-                  )}
-                </>
-              ) : (
-                <YoutubeLinkForm onUrlSubmitted={submitYoutubeUrl} />
-              )}
+              <div className="flex flex-col gap-4 p-6">
+                {source === "file" ? (
+                  <>
+                    <UploadDropzone onFileSelected={setSelectedFile} />
+                    {selectedFile && (
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2 border border-border px-3 py-2">
+                          <MusicNote
+                            weight="fill"
+                            aria-hidden
+                            className="size-3.5 shrink-0 text-primary"
+                          />
+                          <span className="min-w-0 flex-1 truncate font-mono text-xs">
+                            {selectedFile.name}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label="Remove selected file"
+                            onClick={() => setSelectedFile(null)}
+                            className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+                          >
+                            <X aria-hidden className="size-3.5" />
+                          </button>
+                        </div>
+                        <Button
+                          type="button"
+                          className="w-full"
+                          disabled={isSubmitting}
+                          onClick={() => submitFile(selectedFile)}
+                        >
+                          <UploadSimple data-icon="inline-start" aria-hidden />
+                          {isSubmitting ? "Uploading…" : "Upload & analyze"}
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <YoutubeLinkForm onUrlSubmitted={submitYoutubeUrl} />
+                )}
 
-              {submitError && <p className="text-xs text-destructive">{submitError}</p>}
+                {submitError && (
+                  <p className="text-xs text-destructive">{submitError}</p>
+                )}
+              </div>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </main>
     </div>
   );
 }

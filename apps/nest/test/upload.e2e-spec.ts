@@ -108,6 +108,9 @@ describe('UploadController (e2e)', () => {
           where: { id: track.id },
         });
         expect(stored?.status).toBe('PENDING');
+        // isDemo round-trips as a real boolean (its value depends on how
+        // many demo rows already exist in the shared test DB).
+        expect(typeof stored?.isDemo).toBe('boolean');
 
         const analysisJobs = await prismaService.analysisJob.findMany({
           where: { trackId: track.id },

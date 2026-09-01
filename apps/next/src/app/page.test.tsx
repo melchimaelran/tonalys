@@ -19,7 +19,46 @@ describe("Home", () => {
     vi.stubGlobal("fetch", vi.fn());
   });
 
-  it("renders the track library, listing analyzed tracks", async () => {
+  it("leads with a headline and an upload call to action", () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify([]), { status: 200 }),
+    );
+
+    renderPage();
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: /chords to any song/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /upload a track/i }),
+    ).toHaveAttribute("href", "/upload");
+    expect(
+      screen.getByRole("link", { name: /how it works/i }),
+    ).toHaveAttribute("href", "/about");
+    expect(
+      screen.getByRole("link", { name: /view demo songs/i }),
+    ).toHaveAttribute("href", "#demo-songs");
+  });
+
+  it("presents the feature set with a player preview", () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify([]), { status: 200 }),
+    );
+
+    const { container } = renderPage();
+
+    expect(screen.getByText("What it detects")).toBeInTheDocument();
+    expect(screen.getByText("Beyond major & minor")).toBeInTheDocument();
+    // The static player preview (decorative figure) with both views.
+    const preview = container.querySelector("figure[aria-hidden]");
+    expect(preview).not.toBeNull();
+    expect(preview?.textContent).toContain("Am7");
+    expect(
+      preview?.querySelector('[aria-label="Guitar chord diagram"]'),
+    ).not.toBeNull();
+  });
+
+  it("lists the demo songs, each linking to its track view", async () => {
     const tracks = [
       {
         id: "track-1",
@@ -36,37 +75,10 @@ describe("Home", () => {
 
     renderPage();
 
+    expect(
+      screen.getByRole("heading", { name: /demo songs/i }),
+    ).toBeInTheDocument();
     const link = await screen.findByRole("link", { name: /My Song\.mp3/ });
     expect(link).toHaveAttribute("href", "/tracks/track-1");
-  });
-
-  it("links to the upload page", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify([]), { status: 200 }),
-    );
-
-    renderPage();
-
-    expect(
-      await screen.findByRole("link", { name: /add a track/i }),
-    ).toHaveAttribute("href", "/upload");
-  });
-
-  it("shows a hero with a tagline and an upload call to action", () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify([]), { status: 200 }),
-    );
-
-    renderPage();
-
-    expect(
-      screen.getByRole("heading", { level: 1, name: "Tonalys" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/detect chords, tempo and key/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /upload a track/i }),
-    ).toHaveAttribute("href", "/upload");
   });
 });
