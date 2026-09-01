@@ -14,6 +14,9 @@ const schema = Joi.object({
   // Set to "false" to open every route with no login (temporary public
   // access). Default "true" keeps auth exactly as it is.
   AUTH_ENABLED: Joi.string().valid('true', 'false').default('true'),
+  // Non-demo tracks older than this are deleted (DB + MinIO) by the daily
+  // cleanup cron (ADR-055).
+  TRACK_RETENTION_HOURS: Joi.number().integer().min(1).default(24),
 })
   .unknown(true)
   .required();
