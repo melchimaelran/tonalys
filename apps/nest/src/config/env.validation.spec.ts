@@ -52,4 +52,23 @@ describe('validateEnv', () => {
   it('throws when AUTH_ENABLED is neither "true" nor "false"', () => {
     expect(() => validateEnv({ ...validEnv, AUTH_ENABLED: 'yes' })).toThrow();
   });
+
+  it('defaults TRACK_RETENTION_HOURS to 24 when absent', () => {
+    expect(validateEnv(validEnv)).toMatchObject({ TRACK_RETENTION_HOURS: 24 });
+  });
+
+  it('coerces a provided TRACK_RETENTION_HOURS to a number', () => {
+    expect(
+      validateEnv({ ...validEnv, TRACK_RETENTION_HOURS: '48' }),
+    ).toMatchObject({ TRACK_RETENTION_HOURS: 48 });
+  });
+
+  it('throws when TRACK_RETENTION_HOURS is not a positive integer', () => {
+    expect(() =>
+      validateEnv({ ...validEnv, TRACK_RETENTION_HOURS: '0' }),
+    ).toThrow();
+    expect(() =>
+      validateEnv({ ...validEnv, TRACK_RETENTION_HOURS: 'soon' }),
+    ).toThrow();
+  });
 });
