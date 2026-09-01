@@ -1,6 +1,6 @@
 import os
 
-from app.analysis import extract_chords, load_audio
+from app.analysis import extract_chords
 from app.youtube import download_audio, get_video_info
 
 # "Me at the zoo" — the first video ever uploaded to YouTube, by YouTube's
@@ -22,13 +22,10 @@ def test_download_audio_produces_a_file_the_analysis_pipeline_can_read(tmp_path)
 
     assert os.path.exists(path)
 
-    audio = load_audio(path)
-    assert len(audio) > 0
-
     # Feeding straight into the existing pipeline is the point of this
     # ticket (AC: "transmis au pipeline d'analyse") — just needs to run
     # without crashing on real extracted audio, not any particular result.
-    segments = extract_chords(audio)
+    segments = extract_chords(path)
     assert isinstance(segments, list)
 
 

@@ -10,15 +10,17 @@ from fastapi import FastAPI
 
 from app.analysis import extract_chords, extract_key, extract_tempo
 from app.db import (
-    get_audio_file_key,
+    get_track_source,
     mark_analysis_complete,
     mark_analysis_failed,
     mark_analysis_processing,
     save_chord_segments,
     save_tempo_and_key,
+    set_audio_file_key,
     track_exists,
 )
-from app.storage import download_audio
+from app.storage import download_audio, upload_audio
+from app.youtube import download_audio as download_youtube_audio
 from app.youtube import get_video_info
 
 load_dotenv()
@@ -37,6 +39,28 @@ class JobCancelled(Exception):
 def _raise_if_cancelled(track_id: str) -> None:
     if not track_exists(track_id):
         raise JobCancelled()
+
+
+def _obtain_audio(track_id: str, dest_dir: str) -> str:
+    """Return a local path to the track's audio, fetching it if needed.
+
+    Upload tracks already have their audio in MinIO under audio_file_key.
+    YouTube tracks arrive with only source_url — download it with yt-dlp,
+    push the wav to MinIO and record the key so playback (and any re-run)
+    can reuse it, matching how upload tracks are stored."""
+    audio_file_key, source_url = get_track_source(track_id)
+
+    if audio_file_key:
+        return download_audio(audio_file_key, dest_dir)
+
+    if source_url:
+        wav_path = download_youtube_audio(source_url, dest_dir)
+        key = f"{track_id}.wav"
+        upload_audio(wav_path, key)
+        set_audio_file_key(track_id, key)
+        return wav_path
+
+    raise ValueError(f"track {track_id} has no audio source")
 
 
 async def handle_message(message: aio_pika.abc.AbstractIncomingMessage) -> None:
@@ -67,12 +91,8 @@ async def handle_message(message: aio_pika.abc.AbstractIncomingMessage) -> None:
 
             mark_analysis_processing(track_id, job_id)
 
-            audio_key = get_audio_file_key(track_id)
-            if audio_key is None:
-                raise ValueError(f"unknown track {track_id}")
-
             with tempfile.TemporaryDirectory() as tmp_dir:
-                audio_path = download_audio(audio_key, tmp_dir)
+                audio_path = _obtain_audio(track_id, tmp_dir)
                 tempo = extract_tempo(audio_path)
                 _raise_if_cancelled(track_id)
                 key, scale = extract_key(audio_path)

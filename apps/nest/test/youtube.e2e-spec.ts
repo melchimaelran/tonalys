@@ -123,12 +123,16 @@ describe('YoutubeController (e2e)', () => {
     // PROCESSING or even ERROR by the time this query runs (TON-023
     // marks PROCESSING as soon as the worker picks the message up).
 
-    // The worker did receive and process the message (proving Nest
-    // published it correctly) — it lands on ERROR here rather than DONE
-    // because YouTube tracks aren't wired into the consumer's download
-    // step yet (no audio_file_key to fetch from MinIO), a known,
-    // separate gap tracked outside this ticket's scope.
-    const finalStatus = await waitForTerminalStatus(prismaService, track.jobId);
-    expect(finalStatus).toBe('ERROR');
-  }, 20000);
+    // The worker receives the message (proving Nest published it), then
+    // downloads the audio with yt-dlp, stores it in MinIO and runs the
+    // full analysis pipeline — so the job reaches DONE, same as an
+    // upload. Real download + model inference on the clip, well past the
+    // metadata-only round trip, hence the long timeout.
+    const finalStatus = await waitForTerminalStatus(
+      prismaService,
+      track.jobId,
+      180000,
+    );
+    expect(finalStatus).toBe('DONE');
+  }, 200000);
 });

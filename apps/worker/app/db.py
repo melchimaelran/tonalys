@@ -28,6 +28,28 @@ def get_audio_file_key(track_id: str) -> str | None:
         return row[0] if row else None
 
 
+def get_track_source(track_id: str) -> tuple[str | None, str | None]:
+    """(audio_file_key, source_url) for the track, or (None, None) if it's
+    gone. Uploads have a key and no URL; YouTube tracks start with a URL
+    and no key (the worker fills the key in once it has downloaded the
+    audio)."""
+    with _cursor() as cur:
+        cur.execute(
+            "SELECT audio_file_key, source_url FROM tracks WHERE id = %s",
+            (track_id,),
+        )
+        row = cur.fetchone()
+        return (row[0], row[1]) if row else (None, None)
+
+
+def set_audio_file_key(track_id: str, key: str) -> None:
+    with _cursor() as cur:
+        cur.execute(
+            "UPDATE tracks SET audio_file_key = %s WHERE id = %s",
+            (key, track_id),
+        )
+
+
 def track_exists(track_id: str) -> bool:
     with _cursor() as cur:
         cur.execute("SELECT 1 FROM tracks WHERE id = %s", (track_id,))

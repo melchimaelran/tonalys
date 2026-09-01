@@ -7,13 +7,43 @@ import pytest
 from app.analysis import ChordSegment
 from app.db import (
     get_audio_file_key,
+    get_track_source,
     mark_analysis_complete,
     mark_analysis_failed,
     mark_analysis_processing,
     save_chord_segments,
     save_tempo_and_key,
+    set_audio_file_key,
     track_exists,
 )
+
+
+@pytest.fixture
+def youtube_track():
+    """A YouTube-source Track row: source_url set, audio_file_key still
+    NULL (nest only has the link — the worker downloads and fills the key
+    in)."""
+    track_id = str(uuid.uuid4())
+    source_url = "https://www.youtube.com/watch?v=abcdefghijk"
+
+    connection = psycopg2.connect(os.environ["DATABASE_URL"])
+    with connection:
+        with connection.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO tracks (id, title, source_type, source_url, status)
+                VALUES (%s, 'YT track', 'YOUTUBE', %s, 'PENDING')
+                """,
+                (track_id, source_url),
+            )
+
+    yield track_id, source_url
+
+    with connection:
+        with connection.cursor() as cur:
+            cur.execute("DELETE FROM chord_segments WHERE track_id = %s", (track_id,))
+            cur.execute("DELETE FROM tracks WHERE id = %s", (track_id,))
+    connection.close()
 
 
 @pytest.fixture
@@ -59,6 +89,30 @@ def test_get_audio_file_key_returns_the_stored_key(track_and_job):
 
 def test_get_audio_file_key_returns_none_for_an_unknown_track():
     assert get_audio_file_key(str(uuid.uuid4())) is None
+
+
+def test_get_track_source_returns_key_and_no_url_for_an_upload(track_and_job):
+    track_id, _job_id, audio_key = track_and_job
+
+    assert get_track_source(track_id) == (audio_key, None)
+
+
+def test_get_track_source_returns_url_and_no_key_for_a_youtube_track(youtube_track):
+    track_id, source_url = youtube_track
+
+    assert get_track_source(track_id) == (None, source_url)
+
+
+def test_get_track_source_returns_none_none_for_an_unknown_track():
+    assert get_track_source(str(uuid.uuid4())) == (None, None)
+
+
+def test_set_audio_file_key_records_the_key_on_the_track(youtube_track):
+    track_id, _source_url = youtube_track
+
+    set_audio_file_key(track_id, f"{track_id}.wav")
+
+    assert get_track_source(track_id) == (f"{track_id}.wav", "https://www.youtube.com/watch?v=abcdefghijk")
 
 
 def test_track_exists_is_true_for_a_present_track(track_and_job):

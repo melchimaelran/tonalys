@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import time
 import uuid
 
@@ -10,6 +11,15 @@ from fastapi.testclient import TestClient
 from minio import Minio
 
 from app.main import ANALYSIS_JOBS_QUEUE, app
+
+
+def _minio_client() -> Minio:
+    return Minio(
+        f"{os.environ['MINIO_ENDPOINT']}:{os.environ['MINIO_PORT']}",
+        access_key=os.environ["MINIO_ROOT_USER"],
+        secret_key=os.environ["MINIO_ROOT_PASSWORD"],
+        secure=False,
+    )
 
 
 def _publish(payload: dict) -> None:
@@ -106,6 +116,44 @@ def job_with_missing_audio():
     connection.close()
 
 
+@pytest.fixture
+def pending_youtube_job():
+    # A YouTube-source Track: source_url set, audio_file_key NULL — nest
+    # only ever has the link. The worker is expected to download the audio,
+    # store it in MinIO and fill audio_file_key in.
+    track_id = str(uuid.uuid4())
+    job_id = str(uuid.uuid4())
+    source_url = "https://www.youtube.com/watch?v=fake0000000"
+
+    connection = psycopg2.connect(os.environ["DATABASE_URL"])
+    with connection:
+        with connection.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO tracks (id, title, source_type, source_url, status)
+                VALUES (%s, 'YT track', 'YOUTUBE', %s, 'PENDING')
+                """,
+                (track_id, source_url),
+            )
+            cur.execute(
+                "INSERT INTO analysis_jobs (id, track_id, status) VALUES (%s, %s, 'PENDING')",
+                (job_id, track_id),
+            )
+
+    yield track_id, job_id
+
+    with connection:
+        with connection.cursor() as cur:
+            cur.execute("DELETE FROM analysis_jobs WHERE id = %s", (job_id,))
+            cur.execute("DELETE FROM chord_segments WHERE track_id = %s", (track_id,))
+            cur.execute("DELETE FROM tracks WHERE id = %s", (track_id,))
+    connection.close()
+    try:
+        _minio_client().remove_object(os.environ["MINIO_BUCKET"], f"{track_id}.wav")
+    except Exception:
+        pass
+
+
 def _wait_for_job_done(job_id: str, timeout_s: float = 20.0) -> str:
     connection = psycopg2.connect(os.environ["DATABASE_URL"])
     deadline = time.time() + timeout_s
@@ -151,6 +199,48 @@ def test_worker_consumes_a_job_writes_chord_segments_and_marks_it_done(
     assert tempo_bpm is not None
     assert key_root is not None
     assert key_scale in ("major", "minor")
+
+
+def test_worker_downloads_youtube_audio_stores_it_and_completes(
+    pending_youtube_job, c_major_120bpm_wav, monkeypatch
+):
+    # Same shared-queue caveat as the tests above. yt-dlp itself is
+    # stubbed (real-network YouTube download is covered by
+    # test_youtube.py) — here we prove the consumer branches on a
+    # YouTube track with no audio_file_key: fetch, store in MinIO, record
+    # the key, then run the same analysis pipeline as an upload.
+    track_id, job_id = pending_youtube_job
+
+    def fake_youtube_download(url: str, destination_dir: str) -> str:
+        dest = os.path.join(destination_dir, f"{track_id}.wav")
+        shutil.copyfile(c_major_120bpm_wav, dest)
+        return dest
+
+    monkeypatch.setattr("app.main.download_youtube_audio", fake_youtube_download)
+
+    _publish({"trackId": track_id, "jobId": job_id})
+
+    with TestClient(app):
+        job_status = _wait_for_job_done(job_id)
+
+    assert job_status == "DONE"
+
+    connection = psycopg2.connect(os.environ["DATABASE_URL"])
+    with connection, connection.cursor() as cur:
+        cur.execute(
+            "SELECT status, audio_file_key FROM tracks WHERE id = %s",
+            (track_id,),
+        )
+        track_status, audio_file_key = cur.fetchone()
+        cur.execute("SELECT count(*) FROM chord_segments WHERE track_id = %s", (track_id,))
+        (segment_count,) = cur.fetchone()
+    connection.close()
+
+    assert track_status == "READY"
+    assert audio_file_key == f"{track_id}.wav"
+    # the downloaded audio was persisted to MinIO for playback
+    _minio_client().stat_object(os.environ["MINIO_BUCKET"], audio_file_key)
+    assert segment_count >= 1
 
 
 def test_worker_logs_and_rejects_a_malformed_message(capfd):

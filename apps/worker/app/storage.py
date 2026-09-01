@@ -17,3 +17,11 @@ def download_audio(key: str, destination_dir: str) -> str:
     path = os.path.join(destination_dir, key)
     _client().fget_object(bucket, key, path)
     return path
+
+
+def upload_audio(source_path: str, key: str) -> None:
+    """Put a local file into the tracks bucket under `key`. Used for
+    YouTube tracks: nest never uploads their audio (it only has the URL),
+    so the worker stores the downloaded wav here for playback."""
+    bucket = os.environ["MINIO_BUCKET"]
+    _client().fput_object(bucket, key, source_path)
