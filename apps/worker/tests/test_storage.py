@@ -4,7 +4,16 @@ import uuid
 import pytest
 from minio import Minio
 
-from app.storage import download_audio
+from app.storage import download_audio, upload_audio
+
+
+def _minio_client() -> Minio:
+    return Minio(
+        f"{os.environ['MINIO_ENDPOINT']}:{os.environ['MINIO_PORT']}",
+        access_key=os.environ["MINIO_ROOT_USER"],
+        secret_key=os.environ["MINIO_ROOT_PASSWORD"],
+        secure=False,
+    )
 
 
 @pytest.fixture
@@ -43,3 +52,26 @@ def test_download_audio_fetches_the_object_to_the_destination_dir(uploaded_objec
     assert os.path.exists(path)
     with open(path, "rb") as f:
         assert f.read() == content
+
+
+def test_upload_audio_puts_the_local_file_into_the_bucket(tmp_path):
+    client = _minio_client()
+    bucket = os.environ["MINIO_BUCKET"]
+    if not client.bucket_exists(bucket):
+        client.make_bucket(bucket)
+
+    key = f"{uuid.uuid4()}.wav"
+    content = b"downloaded youtube audio stand-in"
+    source_path = tmp_path / "yt.wav"
+    source_path.write_bytes(content)
+
+    try:
+        upload_audio(str(source_path), key)
+
+        roundtrip_dir = tmp_path / "back"
+        roundtrip_dir.mkdir()
+        fetched = download_audio(key, str(roundtrip_dir))
+        with open(fetched, "rb") as f:
+            assert f.read() == content
+    finally:
+        client.remove_object(bucket, key)
