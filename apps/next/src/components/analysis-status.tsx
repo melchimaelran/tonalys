@@ -79,10 +79,11 @@ export function AnalysisStatus({
           </p>
         </div>
         <p className="max-w-sm text-center text-xs text-muted-foreground">
-          The server analyses one track at a time —{" "}
-          {ahead === 1
-            ? "1 track ahead of you is still being processed. Yours starts as soon as it finishes."
-            : `${ahead} tracks ahead of you are still being processed. Yours starts as soon as they finish.`}
+          {ahead <= 0
+            ? "You're next — the server analyses one track at a time, so yours starts as soon as the current one finishes."
+            : ahead === 1
+              ? "The server analyses one track at a time — 1 track ahead of you is still being processed. Yours starts as soon as it finishes."
+              : `The server analyses one track at a time — ${ahead} tracks ahead of you are still being processed. Yours starts as soon as they finish.`}
         </p>
         <p className="text-xs text-muted-foreground">
           Please wait — this can take a few minutes. Keep this tab open.

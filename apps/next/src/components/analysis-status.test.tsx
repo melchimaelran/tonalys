@@ -54,6 +54,15 @@ describe("AnalysisStatus", () => {
     expect(screen.queryByText(/position/i)).not.toBeInTheDocument();
   });
 
+  it("tells a next-in-line user they're next without a zero count", () => {
+    render(
+      <AnalysisStatus status="PENDING" errorMessage={null} queuePosition={1} />,
+    );
+
+    expect(screen.getByText(/you're next/i)).toBeInTheDocument();
+    expect(screen.queryByText(/0 tracks ahead/i)).not.toBeInTheDocument();
+  });
+
   it("explains why a queued user waits: server works one at a time, with the count ahead", () => {
     render(
       <AnalysisStatus status="PENDING" errorMessage={null} queuePosition={2} />,
