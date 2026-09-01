@@ -35,6 +35,22 @@ describe("TrackView", () => {
     await screen.findByText("—");
   });
 
+  it("keeps the audio player full width, outside the max-w-2xl chord content column", async () => {
+    const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "major" }];
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(chords), { status: 200 })),
+    );
+
+    const { container } = renderTrackView("track-1");
+    await screen.findByText("C major");
+
+    const audio = container.querySelector("audio");
+    expect(audio?.closest(".max-w-2xl")).toBeNull();
+
+    const chordLabel = screen.getByText("C major");
+    expect(chordLabel.closest(".max-w-2xl")).not.toBeNull();
+  });
+
   it("highlights the chord matching the audio's current playback time", async () => {
     const chords = [{ id: "seg-1", startTime: 0, endTime: 5, root: "C", chordType: "maj" }];
     vi.mocked(fetch).mockImplementation(() =>
