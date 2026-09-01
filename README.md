@@ -8,8 +8,8 @@ on a piano keyboard and as guitar chord shapes.
 
 ![Tonalys homepage](docs/screenshots/homepage.png)
 
-> Personal project + portfolio piece. It's a **V1** — the analysis pipeline and
-> the player are done; more is planned (see [Roadmap](#status--roadmap)).
+> Personal project, single maintainer. It's a **V1** — the analysis pipeline
+> and the player are done; more is planned (see [Roadmap](#status--roadmap)).
 
 ---
 
