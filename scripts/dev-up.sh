@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Starts the infra services (postgres, redis, rabbitmq, minio) in Docker,
+# Starts the infra services (postgres, rabbitmq, minio) in Docker,
 # applies pending Prisma migrations, and (with --seed) reseeds the database.
 #
 # Daily dev:            ./scripts/dev-up.sh
@@ -24,8 +24,8 @@ for arg in "$@"; do
   esac
 done
 
-echo "==> Starting infra (postgres, redis, rabbitmq, minio)..."
-docker compose up -d --wait postgres redis rabbitmq minio
+echo "==> Starting infra (postgres, rabbitmq, minio)..."
+docker compose up -d --wait postgres rabbitmq minio
 
 echo "==> Applying Prisma migrations..."
 pnpm --filter nest exec prisma migrate deploy
