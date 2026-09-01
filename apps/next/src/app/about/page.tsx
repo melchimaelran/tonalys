@@ -19,7 +19,6 @@ const STACK = [
   "madmom",
   "chord-cnn-lstm",
   "PostgreSQL",
-  "Redis",
   "RabbitMQ",
   "MinIO",
   "Docker Compose",
