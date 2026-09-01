@@ -13,7 +13,7 @@ dist/
 .turbo/
 *.log
 
-.vscode
+.vscode/
 
 .venv/
 __pycache__/
