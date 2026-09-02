@@ -16,9 +16,12 @@ dist/
 .turbo/
 *.tsbuildinfo
 
-# Env — only *.env.example files are tracked
+# Env — ignore every .env variant at any depth; only *.env.example
+# (and the apps/nest/.env.test fixtures) are tracked.
 .env
-.env.local
+.env.*
+!.env.example
+!apps/nest/.env.test
 
 # Python
 .venv/
