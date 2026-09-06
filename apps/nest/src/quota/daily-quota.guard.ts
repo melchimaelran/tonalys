@@ -8,7 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 // App-wide cap on new analyses per UTC day. There is no user model, so this
 // is deliberately a single global counter, not per-IP / per-account.
-export const DAILY_ANALYSIS_LIMIT = 18;
+export const DAILY_ANALYSIS_LIMIT = 30;
 
 @Injectable()
 export class DailyQuotaGuard implements CanActivate {

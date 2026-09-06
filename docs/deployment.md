@@ -241,7 +241,7 @@ Edit `/opt/tonalys/.env`, set `AUTH_ENABLED=false`, then:
 $C up -d          # recreates next + nest with the new env
 ```
 
-`DailyQuotaGuard` then caps new analyses at 18 per UTC day, app-wide
+`DailyQuotaGuard` then caps new analyses at 30 per UTC day, app-wide
 (ADR-053). Revert by setting `AUTH_ENABLED=true` and `up -d` again.
 
 ---
