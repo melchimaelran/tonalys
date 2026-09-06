@@ -2,9 +2,10 @@
 # Runs ON THE VPS, from /opt/tonalys/scripts. Called over SSH by
 # .github/workflows/deploy.yml once new images have been pushed to GHCR.
 #
-# The workflow drops fresh copies of docker-compose.prod.yml, Caddyfile
-# and this script into /opt/tonalys before running it, and passes the
-# commit SHA as IMAGE_TAG so each deploy pins an immutable image.
+# The workflow drops fresh copies of docker-compose.prod.yml and this
+# script into /opt/tonalys before running it, and passes the commit SHA as
+# IMAGE_TAG so each deploy pins an immutable image. TLS and routing are
+# handled by the shared Caddy in the `infra` repo (/opt/infra), not here.
 #
 # Manual run / rollback (on the VPS):
 #   cd /opt/tonalys && IMAGE_TAG=<sha> scripts/deploy.sh
