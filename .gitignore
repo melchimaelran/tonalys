@@ -33,6 +33,9 @@ __pycache__/
 # Test / coverage
 coverage/
 
+# Deployment runbook — infra topology, kept out of the public repo
+docs/deployment.md
+
 # Logs & OS / editor junk
 *.log
 .DS_Store
