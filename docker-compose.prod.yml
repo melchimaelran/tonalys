@@ -121,6 +121,12 @@ services:
     depends_on:
       nest:
         condition: service_healthy
+    networks:
+      default: {}
+      # Reached by the shared infra Caddy as `tonalys-next:3000`.
+      edge:
+        aliases:
+          - tonalys-next
 
   worker:
     image: ghcr.io/melchimaelran/tonalys-worker:${IMAGE_TAG:-latest}
@@ -147,23 +153,14 @@ services:
       minio:
         condition: service_healthy
 
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      next:
-        condition: service_healthy
-
 volumes:
   postgres_data:
   rabbitmq_data:
   minio_data:
-  caddy_data:
-  caddy_config:
+
+networks:
+  default: {}
+  # Shared reverse-proxy network. Created once on the VPS (`docker network
+  # create edge`) and owned by the `infra` repo's Caddy, not by this stack.
+  edge:
+    external: true

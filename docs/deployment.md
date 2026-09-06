@@ -7,14 +7,18 @@ merge to main
   └─ .github/workflows/deploy.yml
        ├─ checks : lint + typecheck + test        (blocks on failure)
        ├─ build  : 3 Docker images → GHCR          (tagged :latest and :<sha>)
-       └─ deploy : scp compose + Caddyfile → VPS → scripts/deploy.sh
+       └─ deploy : scp compose + deploy.sh → VPS → scripts/deploy.sh
                      └─ docker compose pull && up -d --wait
 ```
 
-On the VPS, `caddy` is the only service with public ports (80/443). It
-terminates TLS with an automatic Let's Encrypt certificate and reverse
-proxies to `next`. Everything else (`next`, `nest`, `worker`, `postgres`,
-`rabbitmq`, `minio`) is reachable only on the internal Compose network.
+TLS and hostname routing are **not** part of this stack. A shared Caddy —
+its own repo (`infra`), deployed to `/opt/infra` — is the only thing that
+binds ports 80/443 on the VPS. It terminates TLS with an automatic Let's
+Encrypt certificate and reverse-proxies `tonalys.melchimael.dev` to this
+stack's `next` container, reached as `tonalys-next:3000` over the shared
+external `edge` Docker network. Every service here (`next`, `nest`,
+`worker`, `postgres`, `rabbitmq`, `minio`) is otherwise reachable only on
+the internal Compose network.
 
 **No secret is ever committed.** Secrets live in exactly two places:
 GitHub Actions secrets (VPS access only) and `/opt/tonalys/.env` on the
@@ -75,11 +79,16 @@ sudo ufw enable
 
 Also open 80 and 443 in the OVH VPS firewall if you enabled it there.
 
-### App directory
+### App directory + shared proxy network
 
 ```bash
 sudo install -d -o deploy -g deploy /opt/tonalys /opt/tonalys/scripts
+docker network create edge   # shared with the infra Caddy; harmless if it exists
 ```
+
+The `infra` repo (shared Caddy) must be deployed to `/opt/infra` before or
+alongside the first tonalys deploy — it owns ports 80/443 and the TLS
+certificate for `tonalys.melchimael.dev`.
 
 ### The `.env` file
 
@@ -190,12 +199,13 @@ permissions** to *Read and write permissions*.
    builds reuse the GitHub Actions layer cache.
 3. `build` creates three private packages under the account:
    `tonalys-next`, `tonalys-nest`, `tonalys-worker`.
-4. `deploy` copies `docker-compose.prod.yml`, `Caddyfile` and
-   `scripts/deploy.sh` to `/opt/tonalys` and runs the script, which pulls
-   the freshly pushed images (pinned to the commit SHA), runs Prisma
-   migrations as a one-shot, and starts the stack.
+4. `deploy` copies `docker-compose.prod.yml` and `scripts/deploy.sh` to
+   `/opt/tonalys` and runs the script, which pulls the freshly pushed
+   images (pinned to the commit SHA), runs Prisma migrations as a
+   one-shot, and starts the stack. `next` joins the `edge` network so the
+   infra Caddy can reach it.
 5. Open `https://tonalys.melchimael.dev`. First load may take ~30 s while
-   Caddy fetches the certificate.
+   the infra Caddy fetches the certificate.
 
 `nest` creates the MinIO `tracks` bucket on startup — nothing to do
 manually.
@@ -210,7 +220,6 @@ All commands run on the VPS from `/opt/tonalys` as the `deploy` user.
 ```bash
 $C ps                      # status of every service
 $C logs -f nest            # follow one service's logs
-$C logs --since 10m caddy  # recent logs (TLS issues live here)
 $C restart nest            # restart one service
 $C exec postgres psql -U tonalys tonalys   # DB shell
 ```
@@ -252,7 +261,7 @@ $C up -d          # recreates next + nest with the new env
 |---|---|
 | Deploy job: `Permission denied (publickey)` | `VPS_SSH_KEY` is the full private key; its `.pub` is in `/home/deploy/.ssh/authorized_keys`; `VPS_USER` = `deploy` |
 | `docker compose pull`: `denied` / `unauthorized` | `docker login ghcr.io` was not done on the VPS as the `deploy` user, or the PAT lacks `read:packages` |
-| No HTTPS / cert never issued | `dig +short tonalys.melchimael.dev` points at the VPS; ports 80 + 443 open (UFW **and** OVH firewall); `$C logs caddy` |
-| Caddy returns 502 | `next` is unhealthy — `$C logs next` (often a bad `NEST_API_URL` or `nest` itself down) |
+| No HTTPS / cert never issued | `dig +short tonalys.melchimael.dev` points at the VPS; ports 80 + 443 open (UFW **and** OVH firewall); `cd /opt/infra && docker compose logs caddy` |
+| Caddy returns 502 | `next` is unhealthy or not on `edge` — `$C logs next`, and `docker network inspect edge` should list `tonalys-next` |
 | `migrate` service fails | `$C logs migrate` — usually a wrong `DATABASE_URL` in `.env`, or Postgres not healthy yet |
 | Worker OOM-killed mid-analysis | VPS RAM too low; confirm the swap file is active (`swapon --show`) |

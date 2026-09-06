@@ -182,9 +182,10 @@ pnpm --filter nest run cleanup   # delete one-shot tracks older than the retenti
 ## Deployment
 
 Every merge to `main` builds three Docker images, pushes them to GHCR and
-redeploys the stack on a single VPS behind Caddy (automatic HTTPS). Full
-runbook — VPS setup, DNS, secrets, rollback — in
-[`docs/deployment.md`](docs/deployment.md).
+redeploys the stack on a single VPS. TLS and hostname routing are handled by
+a shared Caddy in the separate `infra` repo; this stack just joins the
+external `edge` network. Full runbook — VPS setup, DNS, secrets, rollback —
+in [`docs/deployment.md`](docs/deployment.md).
 
 ---
 
