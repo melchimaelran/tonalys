@@ -168,13 +168,23 @@ pnpm --filter nest run test:e2e                   # integration (needs infra up)
 cd apps/worker && python -m pytest tests/ -v      # worker
 ```
 
-CI runs lint → typecheck → unit tests on every push and PR.
+CI runs lint → typecheck → unit tests on every PR. On `main` the same
+checks run, then the app builds and deploys itself.
 
 ### Maintenance
 
 ```bash
 pnpm --filter nest run cleanup   # delete one-shot tracks older than the retention window (DB + MinIO)
 ```
+
+---
+
+## Deployment
+
+Every merge to `main` builds three Docker images, pushes them to GHCR and
+redeploys the stack on a single VPS behind Caddy (automatic HTTPS). Full
+runbook — VPS setup, DNS, secrets, rollback — in
+[`docs/deployment.md`](docs/deployment.md).
 
 ---
 
