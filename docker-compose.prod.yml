@@ -110,7 +110,10 @@ services:
       NEST_API_URL: http://nest:3001
       AUTH_ENABLED: ${AUTH_ENABLED:-true}
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000"]
+      # /about is public and statically rendered in every auth mode — a
+      # plain 200. Hitting / instead follows the proxy redirect to the
+      # (currently non-existent) /login and 404s. See .env.prod.example.
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/about"]
       interval: 10s
       timeout: 5s
       retries: 5
