@@ -1,8 +1,8 @@
 name: CI
 
+# On main, the same checks run as the `checks` job of deploy.yml (which
+# then builds + deploys), so main is intentionally not triggered here.
 on:
-  push:
-    branches: [main]
   pull_request:
 
 jobs:
