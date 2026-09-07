@@ -41,15 +41,23 @@ describe("UploadPage", () => {
     expect(screen.getByText(/track\.mp3/i)).toBeInTheDocument();
   });
 
-  it("switches to the YouTube link form when that tab is selected", () => {
+  it("shows the paused notice instead of the form when the YouTube tab is selected", () => {
     renderPage();
-
-    expect(screen.queryByLabelText(/youtube link/i)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: /youtube link/i }));
 
-    expect(screen.getByLabelText(/youtube link/i)).toBeInTheDocument();
+    expect(screen.getByText(/youtube link import is paused/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/youtube link/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/drag and drop an audio file/i)).not.toBeInTheDocument();
+  });
+
+  it("the paused notice's button switches back to the file dropzone", () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole("tab", { name: /youtube link/i }));
+    fireEvent.click(screen.getByRole("button", { name: /upload an audio file instead/i }));
+
+    expect(screen.getByText(/drag and drop an audio file/i)).toBeInTheDocument();
   });
 
   it("switches back to the file dropzone from the YouTube tab", () => {
@@ -168,7 +176,9 @@ describe("UploadPage", () => {
     expect(screen.queryByTestId("job-status")).not.toBeInTheDocument();
   });
 
-  it("submits a YouTube link to /api/youtube and shows the job status once accepted", async () => {
+  // Skipped while YOUTUBE_IMPORT_ENABLED is false (YouTube import paused —
+  // see project_youtube_botcheck_saga). Restore with the tab's form.
+  it.skip("submits a YouTube link to /api/youtube and shows the job status once accepted", async () => {
     vi.mocked(fetch).mockImplementation((input) => {
       const url = String(input);
       if (url === "/api/youtube") {
@@ -208,7 +218,8 @@ describe("UploadPage", () => {
     );
   });
 
-  it("disables the YouTube submit button and shows a loading label while the request is in flight", async () => {
+  // Skipped while YOUTUBE_IMPORT_ENABLED is false (see above).
+  it.skip("disables the YouTube submit button and shows a loading label while the request is in flight", async () => {
     let resolveUpload: (value: Response) => void = () => {};
     vi.mocked(fetch).mockImplementation(
       () =>
