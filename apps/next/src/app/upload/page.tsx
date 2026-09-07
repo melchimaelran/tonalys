@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileArrowUp, MusicNote, UploadSimple, X, YoutubeLogo } from "@phosphor-icons/react";
+import { FileArrowUp, MusicNote, UploadSimple, Wrench, X, YoutubeLogo } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { AnalysisStatus } from "@/components/analysis-status";
 import { BackLink } from "@/components/back-link";
@@ -13,6 +13,34 @@ import { useJobStatus } from "@/hooks/use-job-status";
 import { cn } from "@/lib/utils";
 
 type Source = "file" | "youtube";
+
+// Temporary: YouTube tightened access for servers (bot + PO-token checks
+// that block automated imports from our host). The link-import path is
+// paused until the worker-side fix ships — flip back to `true` to restore
+// the form. See project notes (project_youtube_botcheck_saga).
+const YOUTUBE_IMPORT_ENABLED = false;
+
+function YoutubePausedNotice({ onUseFile }: { onUseFile: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-4 border border-dashed border-border px-6 py-10 text-center">
+      <div className="flex size-11 items-center justify-center rounded-full bg-muted">
+        <Wrench aria-hidden className="size-5 text-muted-foreground" />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <p className="text-sm font-medium">YouTube link import is paused</p>
+        <p className="mx-auto max-w-sm text-xs leading-relaxed text-muted-foreground">
+          YouTube has tightened access for servers — extra bot and token checks
+          now block automated link imports from our host. A fix is in progress
+          and this will be back soon.
+        </p>
+      </div>
+      <Button type="button" variant="outline" size="sm" onClick={onUseFile}>
+        <FileArrowUp data-icon="inline-start" aria-hidden />
+        Upload an audio file instead
+      </Button>
+    </div>
+  );
+}
 
 interface SubmitResponse {
   jobId?: string;
@@ -215,6 +243,11 @@ export default function UploadPage() {
                 >
                   <YoutubeLogo aria-hidden />
                   YouTube link
+                  {!YOUTUBE_IMPORT_ENABLED && (
+                    <span className="ml-1.5 rounded-full border border-border px-1.5 py-px text-[0.6rem] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Paused
+                    </span>
+                  )}
                 </button>
               </div>
 
@@ -254,8 +287,10 @@ export default function UploadPage() {
                       </div>
                     )}
                   </>
-                ) : (
+                ) : YOUTUBE_IMPORT_ENABLED ? (
                   <YoutubeLinkForm onUrlSubmitted={submitYoutubeUrl} isSubmitting={isSubmitting} />
+                ) : (
+                  <YoutubePausedNotice onUseFile={() => handleSourceChange("file")} />
                 )}
 
                 {submitError && (
