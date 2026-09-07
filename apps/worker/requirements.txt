@@ -6,7 +6,11 @@ aio-pika
 python-dotenv
 psycopg2-binary
 minio
-yt-dlp
+# Floor-pinned, not ==: YouTube regularly breaks older yt-dlp releases
+# (signature/nsig, bot-check), and fixes only land in newer ones — a
+# rebuild should be free to pick those up. Bump the floor when a stale
+# lower bound would let an image resolve something already broken.
+yt-dlp>=2026.8.19
 
 # chord-cnn-lstm (ADR-052, apps/worker/vendor/chord_cnn_lstm) runtime deps.
 # Install torch FIRST via the CPU-only index — the default PyPI wheel
