@@ -52,6 +52,27 @@ describe("DemoSongs", () => {
     expect(older).toHaveAttribute("href", "/tracks/track-1");
   });
 
+  it("shows the upload date for each track", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify(tracks), { status: 200 }),
+    );
+
+    renderDemoSongs();
+
+    const fmt = (iso: string) =>
+      new Date(iso).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    expect(
+      await screen.findByText(new RegExp(fmt("2026-02-01T00:00:00.000Z"))),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(new RegExp(fmt("2026-01-01T00:00:00.000Z"))),
+    ).toBeInTheDocument();
+  });
+
   it("shows the analysis status for each track", async () => {
     vi.mocked(fetch).mockResolvedValue(
       new Response(JSON.stringify(tracks), { status: 200 }),

@@ -39,14 +39,21 @@ function TrackRow({ track }: { track: TrackSummary }) {
           weight="fill"
           className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
         />
-        <span className="min-w-0 flex-1 truncate font-medium">{track.title}</span>
-        <span className="shrink-0 font-mono text-xs text-muted-foreground">
-          {formatDate(track.createdAt)}
-          {duration ? ` · ${duration}` : ""}
-        </span>
-        <span className="shrink-0 rounded-full bg-foreground/10 px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground">
-          {track.status}
-        </span>
+        {/* Stacks on mobile (title line, then meta line) so the date and
+            status never get pushed off the right edge and clipped by the
+            list's overflow-hidden; single row from sm up. */}
+        <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+          <span className="min-w-0 truncate font-medium sm:flex-1">{track.title}</span>
+          <span className="flex shrink-0 items-center gap-2">
+            <span className="font-mono text-xs text-muted-foreground">
+              {formatDate(track.createdAt)}
+              {duration ? ` · ${duration}` : ""}
+            </span>
+            <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground">
+              {track.status}
+            </span>
+          </span>
+        </div>
         <CaretRight
           aria-hidden
           className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
