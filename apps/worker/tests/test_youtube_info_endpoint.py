@@ -20,4 +20,9 @@ def test_youtube_info_returns_unavailable_for_a_nonexistent_video():
         response = client.get("/youtube/info", params={"url": NONEXISTENT_VIDEO_URL})
 
     assert response.status_code == 200
-    assert response.json() == {"available": False, "title": None, "duration_seconds": None}
+    assert response.json() == {
+        "available": False,
+        "title": None,
+        "duration_seconds": None,
+        "reason": "unavailable",
+    }
