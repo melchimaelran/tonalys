@@ -128,6 +128,14 @@ services:
         aliases:
           - tonalys-next
 
+  # PO token provider for yt-dlp. YouTube demands a PO token from
+  # datacenter IPs; the bgutil-ytdlp-pot-provider plugin in the worker
+  # image fetches one over HTTP from this sidecar. Internal only — no
+  # published port. (ADR-064)
+  pot-provider:
+    image: brainicism/bgutil-ytdlp-pot-provider:1.3.2
+    restart: unless-stopped
+
   worker:
     image: ghcr.io/melchimaelran/tonalys-worker:${IMAGE_TAG:-latest}
     restart: unless-stopped
@@ -144,6 +152,7 @@ services:
       # worker logs a warning and runs without cookies (dev parity).
       # Refresh procedure: docs/deployment.md.
       YT_COOKIES_FILE: /secrets/yt-cookies.txt
+      BGUTIL_POT_BASE_URL: http://pot-provider:4416
     volumes:
       # Not :ro — yt-dlp writes the refreshed cookie jar back on close
       # (a :ro mount makes it crash with OSError [Errno 30]). The
@@ -163,6 +172,11 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      # start-order only, no health gate: if the provider is slow/down,
+      # yt-dlp falls back to the tv/web_safari clients rather than blocking
+      # the whole deploy on `up --wait`.
+      pot-provider:
+        condition: service_started
 
 volumes:
   postgres_data:

@@ -11,6 +11,12 @@ minio
 # rebuild should be free to pick those up. Bump the floor when a stale
 # lower bound would let an image resolve something already broken.
 yt-dlp>=2026.8.19
+# yt-dlp plugin (auto-discovered) — fetches a PO token from the bgutil
+# pot-provider sidecar (BGUTIL_POT_BASE_URL). Without a PO token YouTube
+# 403s this VPS's datacenter IP with "The page needs to be reloaded"
+# even with valid cookies (ADR-064). Keep the major version matched with
+# the pot-provider image tag in docker-compose.prod.yml.
+bgutil-ytdlp-pot-provider>=1.3.0,<2
 
 # chord-cnn-lstm (ADR-052, apps/worker/vendor/chord_cnn_lstm) runtime deps.
 # Install torch FIRST via the CPU-only index — the default PyPI wheel

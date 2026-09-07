@@ -17,11 +17,11 @@ _BLOCKED_MARKERS = (
     "page needs to be reloaded",
 )
 
-# From a datacenter IP, YouTube's default (web) player response now
-# demands a PO token, and yt-dlp then fails with "The page needs to be
-# reloaded" / "no formats". `tv` and `web_safari` don't need one; keeping
-# `default` first lets a working web response win when there is one.
-# `missing_pot` still lists PO-token-gated formats as a last resort.
+# From a datacenter IP, YouTube's default (web) player response demands a
+# PO token, and yt-dlp then fails with "The page needs to be reloaded" /
+# "no formats". The real fix is a PO token from the bgutil provider
+# sidecar (BGUTIL_POT_BASE_URL, wired below). `tv`/`web_safari` and
+# `missing_pot` stay as a fallback for when the provider is unreachable.
 _YOUTUBE_EXTRACTOR_ARGS = {
     "player_client": ["default", "tv", "web_safari"],
     "formats": ["missing_pot"],
@@ -62,17 +62,17 @@ class YoutubeDownloadError(RuntimeError):
 
 def build_ydl_options(base: dict) -> dict:
     """Return a deep copy of `base` with the YouTube workarounds applied:
-    `cookiefile` when `YT_COOKIES_FILE` points at an existing file, plus
-    the `player_client` / `formats` extractor args (merged under any the
-    caller already set).
+    `cookiefile` when `YT_COOKIES_FILE` points at an existing file, the
+    `player_client` / `formats` extractor args, and the bgutil PO-token
+    provider `base_url` when `BGUTIL_POT_BASE_URL` is set (all merged
+    under anything the caller already put in `extractor_args`).
 
     Prod runs from a datacenter IP that YouTube greets with "Sign in to
-    confirm you're not a bot" then, once past that, "The page needs to be
-    reloaded" on the web player (PO token) — see docs/deployment.md. A
-    cookies.txt from a logged-in throwaway account plus the `tv` /
-    `web_safari` clients clear both. Dev (residential IP) leaves
-    `YT_COOKIES_FILE` unset; a missing/empty path is ignored rather than
-    passed to yt-dlp (which would raise on a nonexistent cookie file)."""
+    confirm you're not a bot" (cleared by the cookies.txt) then "The page
+    needs to be reloaded" (a PO token, from the pot-provider sidecar) —
+    see docs/deployment.md. Dev (residential IP) leaves both env vars
+    unset; a missing/empty cookie path is ignored rather than passed to
+    yt-dlp (which would raise on a nonexistent cookie file)."""
     options = copy.deepcopy(base)
 
     cookie_file = os.environ.get("YT_COOKIES_FILE")
@@ -86,6 +86,13 @@ def build_ydl_options(base: dict) -> dict:
         **_YOUTUBE_EXTRACTOR_ARGS,
         **extractor_args.get("youtube", {}),
     }
+
+    # bgutil-ytdlp-pot-provider plugin -> HTTP PO token provider sidecar.
+    # Unset in dev (residential IP needs no PO token); set in prod compose.
+    pot_base_url = os.environ.get("BGUTIL_POT_BASE_URL", "").strip().rstrip("/")
+    if pot_base_url:
+        extractor_args.setdefault("youtubepot-bgutilhttp", {})["base_url"] = [pot_base_url]
+
     return options
 
 
