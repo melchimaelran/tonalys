@@ -145,7 +145,11 @@ services:
       # Refresh procedure: docs/deployment.md.
       YT_COOKIES_FILE: /secrets/yt-cookies.txt
     volumes:
-      - /opt/tonalys/secrets:/secrets:ro
+      # Not :ro — yt-dlp writes the refreshed cookie jar back on close
+      # (a :ro mount makes it crash with OSError [Errno 30]). The
+      # rewrite is desirable: it rotates the short-lived session cookies
+      # and extends how long the file stays valid.
+      - /opt/tonalys/secrets:/secrets
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
       interval: 10s

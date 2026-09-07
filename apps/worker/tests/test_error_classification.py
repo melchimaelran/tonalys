@@ -16,6 +16,14 @@ def test_rate_limit_is_blocked():
     assert classify_extraction_error(exc) == "blocked"
 
 
+def test_page_reload_is_blocked():
+    # YouTube handing yt-dlp a "reload" playability state — transient,
+    # not a property of the video, so it's retryable.
+    exc = Exception("ERROR: [youtube] abc: The page needs to be reloaded.")
+
+    assert classify_extraction_error(exc) == "blocked"
+
+
 def test_private_video_is_unavailable():
     exc = Exception("ERROR: [youtube] abc: Private video. Sign in if you've been granted access to this video")
 

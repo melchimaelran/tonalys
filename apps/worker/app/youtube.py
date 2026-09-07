@@ -1,3 +1,4 @@
+import copy
 import logging
 import os
 
@@ -5,16 +6,26 @@ import yt_dlp
 
 logger = logging.getLogger(__name__)
 
-# Substrings yt-dlp puts in its error when YouTube is refusing *this
-# caller* rather than saying the video itself is gone — a datacenter-IP
-# bot-check or a rate-limit. These are transient and fixed on our side
-# (fresh cookies), so the API surfaces them as 503 "try again later"
-# rather than 400 "unavailable".
+# Substrings yt-dlp puts in its error when the failure is transient / on
+# YouTube's or our side rather than a property of the video itself
+# (bot-check, rate-limit, a "reload" playability state). The API surfaces
+# these as 503 "try again later" rather than 400 "unavailable".
 _BLOCKED_MARKERS = (
     "not a bot",  # "Sign in to confirm you're not a bot" (straight or curly ')
     "http error 429",
     "too many requests",
+    "page needs to be reloaded",
 )
+
+# From a datacenter IP, YouTube's default (web) player response now
+# demands a PO token, and yt-dlp then fails with "The page needs to be
+# reloaded" / "no formats". `tv` and `web_safari` don't need one; keeping
+# `default` first lets a working web response win when there is one.
+# `missing_pot` still lists PO-token-gated formats as a last resort.
+_YOUTUBE_EXTRACTOR_ARGS = {
+    "player_client": ["default", "tv", "web_safari"],
+    "formats": ["missing_pot"],
+}
 
 
 def classify_extraction_error(exc: Exception) -> str:
@@ -27,21 +38,31 @@ def classify_extraction_error(exc: Exception) -> str:
 
 
 def build_ydl_options(base: dict) -> dict:
-    """Return a copy of `base` with `cookiefile` added when the
-    `YT_COOKIES_FILE` env var points at an existing file.
+    """Return a deep copy of `base` with the YouTube workarounds applied:
+    `cookiefile` when `YT_COOKIES_FILE` points at an existing file, plus
+    the `player_client` / `formats` extractor args (merged under any the
+    caller already set).
 
     Prod runs from a datacenter IP that YouTube greets with "Sign in to
-    confirm you're not a bot" (see docs/deployment.md). A cookies.txt
-    exported from a logged-in throwaway account clears that check. Dev
-    (residential IP) needs nothing, so the var is unset there and the
-    behaviour is unchanged — a missing/empty path is ignored rather than
+    confirm you're not a bot" then, once past that, "The page needs to be
+    reloaded" on the web player (PO token) — see docs/deployment.md. A
+    cookies.txt from a logged-in throwaway account plus the `tv` /
+    `web_safari` clients clear both. Dev (residential IP) leaves
+    `YT_COOKIES_FILE` unset; a missing/empty path is ignored rather than
     passed to yt-dlp (which would raise on a nonexistent cookie file)."""
-    options = dict(base)
+    options = copy.deepcopy(base)
+
     cookie_file = os.environ.get("YT_COOKIES_FILE")
     if cookie_file and os.path.isfile(cookie_file):
         options["cookiefile"] = cookie_file
     elif cookie_file:
         logger.warning("YT_COOKIES_FILE set to %s but no such file; ignoring", cookie_file)
+
+    extractor_args = options.setdefault("extractor_args", {})
+    extractor_args["youtube"] = {
+        **_YOUTUBE_EXTRACTOR_ARGS,
+        **extractor_args.get("youtube", {}),
+    }
     return options
 
 
