@@ -12,8 +12,13 @@ export function formatChordLabel(chord: ChordLabelInput): string {
     return "—";
   }
 
-  const rootLabel =
-    chord.bassNote && chord.bassNote !== chord.root ? `${chord.root}/${chord.bassNote}` : chord.root;
+  // Slash-chord notation: the full chord (root + type) is the left side of
+  // the slash, the bass note is the whole right side — "C major/F" is a C
+  // major triad played over an F bass, read "C over F". The bass note is
+  // never inserted between the root and the chord type.
+  const chordLabel = `${chord.root} ${chord.chordType}`;
 
-  return `${rootLabel} ${chord.chordType}`;
+  return chord.bassNote && chord.bassNote !== chord.root
+    ? `${chordLabel}/${chord.bassNote}`
+    : chordLabel;
 }

@@ -20,6 +20,7 @@ from app.db import (
     track_exists,
 )
 from app.storage import download_audio, upload_audio
+from app.youtube import YoutubeDownloadError
 from app.youtube import download_audio as download_youtube_audio
 from app.youtube import get_video_info
 
@@ -105,6 +106,11 @@ async def handle_message(message: aio_pika.abc.AbstractIncomingMessage) -> None:
             mark_analysis_complete(track_id, job_id)
         except JobCancelled:
             print(f"Job cancelled, skipping track {track_id}", flush=True)
+        except YoutubeDownloadError as error:
+            # Store the user-facing wording, not yt-dlp's raw dump.
+            print(f"YouTube download failed ({error.reason}): {error}", flush=True)
+            if job_id is not None:
+                mark_analysis_failed(track_id, job_id, error.user_message)
         except Exception as error:
             print(f"Failed to process message: {error}", flush=True)
             if job_id is not None:

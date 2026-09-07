@@ -37,6 +37,29 @@ def classify_extraction_error(exc: Exception) -> str:
     return "unavailable"
 
 
+# What ends up on a failed AnalysisJob (Track.status = ERROR) and is shown
+# to the user by apps/next AnalysisStatus. yt-dlp's raw "ERROR: [youtube]
+# <id>: ..." dump is noise to them — map it to the same wording the
+# /youtube endpoint uses for the equivalent up-front failure.
+_DOWNLOAD_USER_MESSAGES = {
+    "blocked": (
+        "YouTube analysis is temporarily unavailable while we refresh access "
+        "on our side. Please try again later."
+    ),
+    "unavailable": "This YouTube video is unavailable or private, so it can't be analysed.",
+}
+
+
+class YoutubeDownloadError(RuntimeError):
+    """A yt-dlp failure while downloading the audio for an analysis job,
+    classified (`reason`) and with a user-facing `user_message`."""
+
+    def __init__(self, reason: str, original: str) -> None:
+        self.reason = reason
+        self.user_message = _DOWNLOAD_USER_MESSAGES[reason]
+        super().__init__(original)
+
+
 def build_ydl_options(base: dict) -> dict:
     """Return a deep copy of `base` with the YouTube workarounds applied:
     `cookiefile` when `YT_COOKIES_FILE` points at an existing file, plus
@@ -87,15 +110,18 @@ def download_audio(url: str, destination_dir: str) -> str:
             "no_warnings": True,
         }
     )
-    with yt_dlp.YoutubeDL(options) as downloader:
-        info = downloader.extract_info(url, download=True)
-        original_path = downloader.prepare_filename(info)
-        wav_path = os.path.splitext(original_path)[0] + ".wav"
+    try:
+        with yt_dlp.YoutubeDL(options) as downloader:
+            info = downloader.extract_info(url, download=True)
+            original_path = downloader.prepare_filename(info)
+            wav_path = os.path.splitext(original_path)[0] + ".wav"
+    except yt_dlp.utils.DownloadError as exc:
+        raise YoutubeDownloadError(classify_extraction_error(exc), str(exc)) from exc
 
-        if not os.path.exists(wav_path):
-            raise RuntimeError(f"expected wav output at {wav_path} after extraction, found none")
+    if not os.path.exists(wav_path):
+        raise RuntimeError(f"expected wav output at {wav_path} after extraction, found none")
 
-        return wav_path
+    return wav_path
 
 
 def get_video_info(url: str) -> dict:
