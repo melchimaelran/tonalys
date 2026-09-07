@@ -5,6 +5,26 @@ import yt_dlp
 
 logger = logging.getLogger(__name__)
 
+# Substrings yt-dlp puts in its error when YouTube is refusing *this
+# caller* rather than saying the video itself is gone — a datacenter-IP
+# bot-check or a rate-limit. These are transient and fixed on our side
+# (fresh cookies), so the API surfaces them as 503 "try again later"
+# rather than 400 "unavailable".
+_BLOCKED_MARKERS = (
+    "not a bot",  # "Sign in to confirm you're not a bot" (straight or curly ')
+    "http error 429",
+    "too many requests",
+)
+
+
+def classify_extraction_error(exc: Exception) -> str:
+    """"blocked" (YouTube is refusing our IP/session — transient, our
+    side) or "unavailable" (the video is private/removed/invalid)."""
+    message = str(exc).lower()
+    if any(marker in message for marker in _BLOCKED_MARKERS):
+        return "blocked"
+    return "unavailable"
+
 
 def build_ydl_options(base: dict) -> dict:
     """Return a copy of `base` with `cookiefile` added when the
@@ -63,18 +83,24 @@ def get_video_info(url: str) -> dict:
     Track/AnalysisJob. Any failure (invalid URL, private/deleted video,
     bot-check, ...) is reported as unavailable rather than raised — the
     caller only needs a yes/no plus the numbers, not the specific yt-dlp
-    error. The error is logged so prod can tell a real "private" apart
-    from an IP/bot-check block."""
+    error. `reason` ("blocked" | "unavailable") lets Nest tell a real
+    "private" apart from an IP/bot-check block; the full error is logged."""
     options = build_ydl_options({"quiet": True, "no_warnings": True, "noplaylist": True})
     try:
         with yt_dlp.YoutubeDL(options) as extractor:
             info = extractor.extract_info(url, download=False)
-    except Exception:
+    except Exception as exc:
         logger.exception("yt-dlp metadata lookup failed for %s", url)
-        return {"available": False, "title": None, "duration_seconds": None}
+        return {
+            "available": False,
+            "title": None,
+            "duration_seconds": None,
+            "reason": classify_extraction_error(exc),
+        }
 
     return {
         "available": True,
         "title": info.get("title"),
         "duration_seconds": info.get("duration"),
+        "reason": None,
     }

@@ -40,4 +40,9 @@ def test_get_video_info_returns_title_and_duration_for_a_valid_video():
 def test_get_video_info_returns_unavailable_for_a_nonexistent_video():
     info = get_video_info(NONEXISTENT_VIDEO_URL)
 
-    assert info == {"available": False, "title": None, "duration_seconds": None}
+    assert info == {
+        "available": False,
+        "title": None,
+        "duration_seconds": None,
+        "reason": "unavailable",
+    }

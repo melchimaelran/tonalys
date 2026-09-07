@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Post,
+  ServiceUnavailableException,
   UseGuards,
 } from '@nestjs/common';
 import { CreateYoutubeTrackDto } from './dto/create-youtube-track.dto';
@@ -27,6 +28,14 @@ export class YoutubeController {
     const info = await this.youtubeService.getVideoInfo(dto.url);
 
     if (!info.available) {
+      if (info.reason === 'blocked') {
+        // YouTube is refusing our worker's requests (datacenter-IP
+        // bot-check / rate-limit) — nothing wrong with the link. Fixed
+        // on our side by refreshing the worker's YouTube cookies.
+        throw new ServiceUnavailableException(
+          'YouTube analysis is temporarily unavailable while we refresh access on our side. Please try again later.',
+        );
+      }
       throw new BadRequestException('Video is unavailable or private');
     }
     if (

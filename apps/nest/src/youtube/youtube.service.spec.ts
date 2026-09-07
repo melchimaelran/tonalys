@@ -47,10 +47,11 @@ describe('YoutubeService', () => {
       available: true,
       title: 'Song',
       durationSeconds: 180,
+      reason: null,
     });
   });
 
-  it('passes through an unavailable result', async () => {
+  it('passes through an unavailable result, defaulting a missing reason to "unavailable"', async () => {
     fetchMock.mockResolvedValue({
       json: () =>
         Promise.resolve({
@@ -66,7 +67,24 @@ describe('YoutubeService', () => {
       available: false,
       title: null,
       durationSeconds: null,
+      reason: 'unavailable',
     });
+  });
+
+  it('passes through a "blocked" reason from the worker', async () => {
+    fetchMock.mockResolvedValue({
+      json: () =>
+        Promise.resolve({
+          available: false,
+          title: null,
+          duration_seconds: null,
+          reason: 'blocked',
+        }),
+    });
+
+    const info = await service.getVideoInfo('https://youtu.be/abc12345678');
+
+    expect(info.reason).toBe('blocked');
   });
 
   it('throws a clear ServiceUnavailableException when the worker is unreachable', async () => {
