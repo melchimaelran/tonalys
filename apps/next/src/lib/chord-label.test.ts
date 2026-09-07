@@ -6,8 +6,10 @@ describe("formatChordLabel", () => {
     expect(formatChordLabel({ root: "C", chordType: "major" })).toBe("C major");
   });
 
-  it("formats a slash chord when the bass note differs from the root", () => {
-    expect(formatChordLabel({ root: "C", chordType: "major", bassNote: "F" })).toBe("C/F major");
+  it("formats a slash chord as [chord][type]/[bass] — the bass note is the whole right side", () => {
+    expect(formatChordLabel({ root: "C", chordType: "major", bassNote: "F" })).toBe("C major/F");
+    expect(formatChordLabel({ root: "A", chordType: "minor", bassNote: "G" })).toBe("A minor/G");
+    expect(formatChordLabel({ root: "D", chordType: "7", bassNote: "F#" })).toBe("D 7/F#");
   });
 
   it("does not add a slash when the bass note equals the root", () => {

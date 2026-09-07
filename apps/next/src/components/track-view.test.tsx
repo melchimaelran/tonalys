@@ -127,14 +127,14 @@ describe("TrackView", () => {
     );
 
     renderTrackView("track-1");
-    await screen.findByText("C/F major");
+    await screen.findByText("C major/F");
 
     fireEvent.change(screen.getByRole("combobox", { name: /transpose/i }), {
       target: { value: "2" },
     });
 
-    expect(screen.getByText("D/G major")).toBeInTheDocument();
-    expect(screen.queryByText("C/F major")).not.toBeInTheDocument();
+    expect(screen.getByText("D major/G")).toBeInTheDocument();
+    expect(screen.queryByText("C major/F")).not.toBeInTheDocument();
   });
 
   it("does not show the transpose selector on the guitar view", async () => {
@@ -202,15 +202,15 @@ describe("TrackView", () => {
     );
 
     renderTrackView("track-1");
-    await screen.findByText("D/A major");
+    await screen.findByText("D major/A");
     fireEvent.click(screen.getByRole("tab", { name: /guitar/i }));
 
     fireEvent.change(screen.getByRole("combobox", { name: /capo/i }), {
       target: { value: "2" },
     });
 
-    expect(screen.getByText("C/G major")).toBeInTheDocument();
-    expect(screen.queryByText("D/A major")).not.toBeInTheDocument();
+    expect(screen.getByText("C major/G")).toBeInTheDocument();
+    expect(screen.queryByText("D major/A")).not.toBeInTheDocument();
   });
 
   it("shows the real chord name again (not capo-transposed) when switching back to piano", async () => {
@@ -293,7 +293,7 @@ describe("TrackView", () => {
 
     renderTrackView("track-1");
 
-    await screen.findByText("C/F major");
+    await screen.findByText("C major/F");
   });
 
   it("lets the user turn a chord into a slash chord and sends the bass note", async () => {
