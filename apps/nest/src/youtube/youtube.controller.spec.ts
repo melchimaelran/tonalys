@@ -1,4 +1,7 @@
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { YoutubeController } from './youtube.controller';
 import { YoutubeService } from './youtube.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -41,6 +44,25 @@ describe('YoutubeController', () => {
 
     await expect(controller.create({ url: VALID_URL })).rejects.toThrow(
       BadRequestException,
+    );
+    expect(txTrack.create).not.toHaveBeenCalled();
+  });
+
+  it('returns 503 with a "try again later" message when YouTube is blocking the worker', async () => {
+    youtubeService.getVideoInfo.mockResolvedValue({
+      available: false,
+      title: null,
+      durationSeconds: null,
+      reason: 'blocked',
+    });
+
+    const error = await controller
+      .create({ url: VALID_URL })
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(ServiceUnavailableException);
+    expect((error as ServiceUnavailableException).message).toMatch(
+      /temporarily unavailable/i,
     );
     expect(txTrack.create).not.toHaveBeenCalled();
   });

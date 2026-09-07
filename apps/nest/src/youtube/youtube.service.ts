@@ -1,16 +1,23 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+export type YoutubeUnavailableReason = 'blocked' | 'unavailable';
+
 export interface YoutubeVideoInfo {
   available: boolean;
   title: string | null;
   durationSeconds: number | null;
+  // Only set when available is false. "blocked" = YouTube is refusing the
+  // worker's IP/session (transient, our side); "unavailable" = the video
+  // itself is private/removed/invalid.
+  reason: YoutubeUnavailableReason | null;
 }
 
 interface WorkerYoutubeInfoResponse {
   available: boolean;
   title: string | null;
   duration_seconds: number | null;
+  reason?: YoutubeUnavailableReason | null;
 }
 
 @Injectable()
@@ -38,6 +45,7 @@ export class YoutubeService {
       available: data.available,
       title: data.title,
       durationSeconds: data.duration_seconds,
+      reason: data.available ? null : (data.reason ?? 'unavailable'),
     };
   }
 }

@@ -139,6 +139,13 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET: tracks
+      # YouTube bot-checks this VPS's datacenter IP. cookies.txt exported
+      # from a logged-in throwaway account clears it. Missing file =
+      # worker logs a warning and runs without cookies (dev parity).
+      # Refresh procedure: docs/deployment.md.
+      YT_COOKIES_FILE: /secrets/yt-cookies.txt
+    volumes:
+      - /opt/tonalys/secrets:/secrets:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
       interval: 10s
