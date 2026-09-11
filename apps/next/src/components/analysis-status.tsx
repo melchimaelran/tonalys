@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle, Circle, CircleNotch, WarningCircle } from "@phosphor-icons/react";
+import { CheckCircle, Circle, CircleNotch, Info, WarningCircle } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 
 export interface AnalysisStatusProps {
@@ -23,6 +23,19 @@ const PHASES = [
   { label: "Identifying key", durationMs: 2500 },
   { label: "Transcribing chords", durationMs: 5000 },
 ] as const;
+
+function SlowDemoServerNotice() {
+  return (
+    <div className="flex max-w-sm items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-left dark:border-amber-900 dark:bg-amber-950">
+      <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+      <p className="text-xs text-amber-800 dark:text-amber-300">
+        This is a demo running on a modest, CPU-only server (no GPU) — the AI
+        model is much slower than it would be on real hardware. Analysis can
+        take several minutes. Thanks for your patience!
+      </p>
+    </div>
+  );
+}
 
 export function AnalysisStatus({
   status,
@@ -88,6 +101,7 @@ export function AnalysisStatus({
         <p className="text-xs text-muted-foreground">
           Please wait — this can take a few minutes. Keep this tab open.
         </p>
+        <SlowDemoServerNotice />
       </div>
     );
   }
@@ -122,6 +136,7 @@ export function AnalysisStatus({
         Please wait — analysing the audio can take a few minutes. Keep this tab
         open.
       </p>
+      <SlowDemoServerNotice />
     </div>
   );
 }

@@ -80,6 +80,22 @@ describe("AnalysisStatus", () => {
     expect(screen.getByText(/3 tracks ahead of you/i)).toBeInTheDocument();
   });
 
+  it("warns that the demo server is slow (CPU-only) while processing", () => {
+    render(<AnalysisStatus status="PROCESSING" errorMessage={null} />);
+
+    expect(screen.getByText(/cpu-only/i)).toBeInTheDocument();
+    expect(screen.getByText(/demo/i)).toBeInTheDocument();
+  });
+
+  it("warns that the demo server is slow (CPU-only) while queued", () => {
+    render(
+      <AnalysisStatus status="PENDING" errorMessage={null} queuePosition={2} />,
+    );
+
+    expect(screen.getByText(/cpu-only/i)).toBeInTheDocument();
+    expect(screen.getByText(/demo/i)).toBeInTheDocument();
+  });
+
   it("advances to the next phase after the first phase's duration elapses", () => {
     render(<AnalysisStatus status="PROCESSING" errorMessage={null} />);
 
