@@ -8,6 +8,12 @@ on a piano keyboard and as guitar chord shapes.
 
 ![Tonalys homepage](docs/screenshots/homepage.png)
 
+**Live demo:** https://tonalys.melchimael.dev
+
+> This is a demo running on a modest, CPU-only server (no GPU) — the AI model
+> is much slower than it would be on real hardware. Analysis can take several
+> minutes. Thanks for your patience!
+
 > Personal project, single maintainer. It's a **V1** — the analysis pipeline
 > and the player are done; more is planned (see [Roadmap](#status--roadmap)).
 
